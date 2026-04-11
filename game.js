@@ -526,6 +526,18 @@ class Bee {
                 }
                 this.target.visited = true;
                 
+                // Track flower visit for quests (only count each flower once)
+                if (game.bearSystem && this.target.id && !game.visitedFlowers?.has(this.target.id)) {
+                    game.visitedFlowers = game.visitedFlowers || new Set();
+                    game.visitedFlowers.add(this.target.id);
+                    game.bearSystem.updateQuestProgress('visit_flowers', 1);
+                    
+                    // Track blue flowers specifically
+                    if (this.target.type === 'blue') {
+                        game.bearSystem.updateQuestProgress('collect_blue_pollen', 1);
+                    }
+                }
+                
                 // For fast bees, immediately find next flower to maximize efficiency
                 if (this.teleport && this.carrying < this.capacity) {
                     if (!this.lastFlowerSearch || Date.now() - this.lastFlowerSearch > 50) {
@@ -552,6 +564,16 @@ class Bee {
                         this.target.pollen -= collected;
                     }
                     this.target.visited = true;
+                    
+                    // Track flower visit for quests
+                    if (game.bearSystem && this.target.id && !game.visitedFlowers?.has(this.target.id)) {
+                        game.visitedFlowers = game.visitedFlowers || new Set();
+                        game.visitedFlowers.add(this.target.id);
+                        game.bearSystem.updateQuestProgress('visit_flowers', 1);
+                        if (this.target.type === 'blue') {
+                            game.bearSystem.updateQuestProgress('collect_blue_pollen', 1);
+                        }
+                    }
                 }
             } else {
                 this.vx = (dx / dist) * this.speed;
@@ -1292,6 +1314,51 @@ class Game {
         
         // Save before page unload
         window.addEventListener('beforeunload', () => this.saveGame());
+        
+        // Initialize zone tracking for Misty's quest
+        this.visitedZones = new Set();
+        this.visitedFlowers = new Set();
+    }
+    
+    trackZoneVisit() {
+        if (!this.player || !this.width || !this.height) return;
+        
+        // Define 4 zones based on screen position
+        const zoneWidth = this.width / 3;
+        const zoneHeight = this.height / 3;
+        
+        let currentZone = null;
+        
+        // Center zone
+        if (this.player.x > zoneWidth && this.player.x < zoneWidth * 2 &&
+            this.player.y > zoneHeight && this.player.y < zoneHeight * 2) {
+            currentZone = 'center';
+        }
+        // North zone
+        else if (this.player.y < zoneHeight) {
+            currentZone = 'north';
+        }
+        // South zone (not needed for quest but tracked)
+        else if (this.player.y > zoneHeight * 2) {
+            currentZone = 'south';
+        }
+        // East zone
+        else if (this.player.x > zoneWidth * 2) {
+            currentZone = 'east';
+        }
+        // West zone
+        else if (this.player.x < zoneWidth) {
+            currentZone = 'west';
+        }
+        
+        // Track new zone visit
+        if (currentZone && !this.visitedZones.has(currentZone)) {
+            this.visitedZones.add(currentZone);
+            // Update quest progress for Misty (explore_zones quest type)
+            if (this.bearSystem) {
+                this.bearSystem.updateQuestProgress('explore_zones', 1);
+            }
+        }
     }
     
     spawnBee(type, save = true) {
@@ -1353,6 +1420,8 @@ class Game {
             // Track quest progress for honey collection
             if (this.bearSystem) {
                 this.bearSystem.updateQuestProgress('collect_honey', honeyMade);
+                this.bearSystem.updateQuestProgress('make_honey', honeyMade);
+                this.bearSystem.updateQuestProgress('make_honey_total', honeyMade);
             }
             this.pollen = 0;
             this.updateUI();
@@ -1406,10 +1475,17 @@ class Game {
             const currentQuest = bear.quests[progress.currentQuestIndex];
             const isCompleted = progress.currentQuestIndex >= bear.quests.length;
             
+            // Avatar emoji selon le bear
+            const avatars = {
+                bruno: '🐻', luna: '🌙', rusty: '🔧', 
+                misty: '💨', ember: '🔥'
+            };
+            const avatar = avatars[bear.id] || '🐻';
+            
             html += `
                 <div class="bear-card ${isCompleted ? 'completed' : ''}">
                     <div class="bear-header">
-                        <span class="bear-avatar">${bear.avatar}</span>
+                        <span class="bear-avatar" style="font-size: 40px; background: ${bear.appearance?.color || '#8B4513'}; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">${avatar}</span>
                         <div class="bear-info">
                             <h3>${bear.name}</h3>
                             <p class="bear-location">📍 ${bear.location}</p>
@@ -1931,6 +2007,9 @@ class Game {
         
         this.player.x = Math.max(this.minX, Math.min(this.maxX, this.player.x));
         this.player.y = Math.max(this.minY, Math.min(this.maxY, this.player.y));
+        
+        // Track zones for Misty's quest - 4 zones: center, north, east, west
+        this.trackZoneVisit();
         
         // Manual collection - player collects pollen when touching flowers
         this.handlePlayerCollection();
