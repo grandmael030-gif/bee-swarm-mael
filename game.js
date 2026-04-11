@@ -1323,6 +1323,11 @@ class Game {
     trackZoneVisit() {
         if (!this.player || !this.width || !this.height) return;
         
+        // Safety check - initialize if undefined (should not happen but defensive)
+        if (!this.visitedZones) {
+            this.visitedZones = new Set();
+        }
+        
         // Define 4 zones based on screen position
         const zoneWidth = this.width / 3;
         const zoneHeight = this.height / 3;
