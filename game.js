@@ -776,6 +776,9 @@ class Game {
         this.upgrades = { speed: 0, capacity: 0, auto: 0, convert: 0, luck: 0, flowers: 0, regen: 0, bubble: 0 };
         this.loadUpgrades();
         
+        // Initialize Bear System (Quests)
+        this.bearSystem = new BearSystem();
+        
         this.setupUI();
         this.setupInputs();
         this.resize();
@@ -823,6 +826,10 @@ class Game {
         // Upgrades
         document.getElementById('upgradesBtn').addEventListener('click', () => this.openUpgrades());
         document.getElementById('closeUpgrades').addEventListener('click', () => this.closeUpgrades());
+        
+        // Bears (Quests)
+        document.getElementById('bearsBtn').addEventListener('click', () => this.openBears());
+        document.getElementById('closeBears').addEventListener('click', () => this.closeBears());
         
         // Upgrade items click
         document.querySelectorAll('.upgrade-item').forEach(item => {
@@ -1219,6 +1226,11 @@ class Game {
         this.pollen += amount;
         this.updateUI();
         
+        // Track quest progress for pollen collection
+        if (this.bearSystem) {
+            this.bearSystem.updateQuestProgress('collect_pollen', amount);
+        }
+        
         // Spawn particles
         for (let i = 0; i < 3; i++) {
             this.particles.push(new Particle(this.player.x, this.player.y, 'pollen'));
@@ -1229,6 +1241,11 @@ class Game {
         if (this.pollen > 0) {
             const honeyMade = Math.floor(this.pollen / 2);
             this.honey += honeyMade;
+            
+            // Track quest progress for honey collection
+            if (this.bearSystem) {
+                this.bearSystem.updateQuestProgress('collect_honey', honeyMade);
+            }
             this.pollen = 0;
             this.updateUI();
             this.saveGame(); // Save after converting
@@ -1257,6 +1274,68 @@ class Game {
     
     closeUpgrades() {
         document.getElementById('upgradesModal').classList.add('hidden');
+    }
+    
+    openBears() {
+        this.displayBears();
+        document.getElementById('bearsModal').classList.remove('hidden');
+    }
+    
+    closeBears() {
+        document.getElementById('bearsModal').classList.add('hidden');
+    }
+    
+    displayBears() {
+        const bearsList = document.getElementById('bearsList');
+        if (!bearsList || !this.bearSystem) return;
+        
+        let html = '';
+        
+        this.bearSystem.bears.forEach(bear => {
+            const progress = this.bearSystem.getQuestProgress(bear.id);
+            const currentQuest = bear.quests[progress.currentQuestIndex];
+            const isCompleted = progress.currentQuestIndex >= bear.quests.length;
+            
+            html += `
+                <div class="bear-card ${isCompleted ? 'completed' : ''}">
+                    <div class="bear-header">
+                        <span class="bear-avatar">${bear.avatar}</span>
+                        <div class="bear-info">
+                            <h3>${bear.name}</h3>
+                            <p class="bear-location">📍 ${bear.location}</p>
+                        </div>
+                    </div>
+                    <p class="bear-personality">${bear.personality}</p>
+                    
+                    ${isCompleted ? `
+                        <div class="quest-completed">
+                            ✅ Toutes les quêtes complétées !
+                        </div>
+                    ` : `
+                        <div class="current-quest">
+                            <h4>📜 Quête actuelle: ${currentQuest.name}</h4>
+                            <p>${currentQuest.description}</p>
+                            <div class="quest-objectives">
+                                ${currentQuest.objectives.map(obj => `
+                                    <div class="objective">
+                                        <span>${obj.type === 'collect_pollen' ? '🌸' : obj.type === 'collect_honey' ? '🍯' : obj.type === 'buy_bees' ? '🐝' : '⭐'} ${obj.description}</span>
+                                        <span class="progress">${progress.currentProgress[obj.type] || 0}/${obj.amount}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="quest-rewards">
+                                <strong>Récompenses:</strong>
+                                ${currentQuest.rewards.honey ? ` 🍯 ${currentQuest.rewards.honey}` : ''}
+                                ${currentQuest.rewards.pollen ? ` 🌸 ${currentQuest.rewards.pollen}` : ''}
+                                ${currentQuest.rewards.bees.length > 0 ? ` 🐝 ${currentQuest.rewards.bees.join(', ')}` : ''}
+                            </div>
+                        </div>
+                    `}
+                </div>
+            `;
+        });
+        
+        bearsList.innerHTML = html;
     }
     
     getUpgradesKey() {

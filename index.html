@@ -95,6 +95,7 @@
                 <button id="makeHoneyBtn">Faire du miel</button>
                 <button id="shopBtn">Magasin</button>
                 <button id="upgradesBtn">⬆️ Upgrades</button>
+                <button id="bearsBtn">🐻 Bears</button>
                 <button id="spawnBeeBtn" class="admin-only hidden">+ Abeille</button>
                 <button id="settingsBtn" class="admin-only hidden">⚙️ Réglages</button>
                 <button id="resetBeesBtn" class="reset-immediate">🗑️ Reset</button>
@@ -222,6 +223,17 @@
             </div>
         </div>
 
+        <!-- Bears/Quests Modal -->
+        <div id="bearsModal" class="modal hidden">
+            <div class="modal-content bears-content">
+                <h2>🐻 Bears & Quêtes</h2>
+                <div id="bearsList" class="bears-list">
+                    <!-- Bears will be loaded here dynamically -->
+                </div>
+                <button id="closeBears" class="close-btn">Fermer</button>
+            </div>
+        </div>
+
         <!-- Settings Modal (Admin Only) -->
         <div id="settingsModal" class="modal hidden">
             <div class="modal-content settings-content">
@@ -266,6 +278,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Bears System -->
+    <script src="bears_system.js?v=20260411222211"></script>
 
     <!-- Live Reload - uniquement en développement local -->
     <script src="livereload.js?v=20260411222211"></script>
