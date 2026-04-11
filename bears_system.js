@@ -33,6 +33,11 @@ class BearSystem {
         return this.playerQuests[bearId];
     }
     
+    // Alias pour compatibilité avec game.js
+    getQuestProgress(bearId) {
+        return this.getBearProgress(bearId);
+    }
+    
     // Vérifier si une quête est complétée
     checkQuestCompletion(bearId) {
         const bear = this.bears[bearId];
