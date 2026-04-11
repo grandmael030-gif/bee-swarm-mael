@@ -1,166 +1,4 @@
 // ============================================
-// BEAR SYSTEM - Gestion des quêtes d'ours
-// ============================================
-
-class BearSystem {
-    constructor() {
-        this.bears = BEARS_DATA;
-        this.playerQuests = {}; // Stockage des progressions
-        this.loadQuests();
-    }
-    
-    loadQuests() {
-        const saved = localStorage.getItem('beeSwarm_bearQuests');
-        if (saved) {
-            this.playerQuests = JSON.parse(saved);
-        }
-    }
-    
-    saveQuests() {
-        localStorage.setItem('beeSwarm_bearQuests', JSON.stringify(this.playerQuests));
-    }
-    
-    // Récupère la progression actuelle d'un joueur pour un bear
-    getBearProgress(bearId) {
-        if (!this.playerQuests[bearId]) {
-            this.playerQuests[bearId] = {
-                unlocked: bearId === 'bruno', // Seul Bruno débloqué au début
-                currentQuestIndex: 0,
-                questProgress: {},
-                completed: false
-            };
-        }
-        return this.playerQuests[bearId];
-    }
-    
-    // Alias pour compatibilité avec game.js
-    getQuestProgress(bearId) {
-        return this.getBearProgress(bearId);
-    }
-    
-    // Vérifier si une quête est complétée
-    checkQuestCompletion(bearId) {
-        const bear = this.bears[bearId];
-        const progress = this.getBearProgress(bearId);
-        const quest = bear.quests[progress.currentQuestIndex];
-        
-        if (!quest) return false;
-        
-        // Vérifier chaque objectif
-        let completed = true;
-        for (const objective of quest.objectives) {
-            const current = progress.questProgress[objective.type] || 0;
-            if (current < objective.target) {
-                completed = false;
-                break;
-            }
-        }
-        
-        return completed;
-    }
-    
-    // Mettre à jour la progression
-    updateProgress(type, amount) {
-        for (const bearId in this.playerQuests) {
-            const progress = this.playerQuests[bearId];
-            if (progress.unlocked && !progress.completed) {
-                const bear = this.bears[bearId];
-                const quest = bear.quests[progress.currentQuestIndex];
-                
-                if (quest) {
-                    for (const obj of quest.objectives) {
-                        if (obj.type === type) {
-                            progress.questProgress[type] = (progress.questProgress[type] || 0) + amount;
-                        }
-                    }
-                }
-            }
-        }
-        this.saveQuests();
-    }
-    
-    // Alias pour compatibilité avec game.js
-    updateQuestProgress(type, amount) {
-        return this.updateProgress(type, amount);
-    }
-    
-    // Compléter une quête et donner les récompenses
-    completeQuest(bearId) {
-        const progress = this.getBearProgress(bearId);
-        const bear = this.bears[bearId];
-        const quest = bear.quests[progress.currentQuestIndex];
-        
-        if (!quest || !this.checkQuestCompletion(bearId)) {
-            return null;
-        }
-        
-        // Donner récompenses
-        const rewards = { ...quest.rewards };
-        
-        // Passer à la quête suivante
-        progress.currentQuestIndex++;
-        progress.questProgress = {};
-        
-        // Débloquer le bear suivant si c'était la dernière quête
-        if (progress.currentQuestIndex >= bear.quests.length) {
-            progress.completed = true;
-            this.unlockNextBear(bearId);
-        }
-        
-        // Débloquer d'autres bears selon les conditions
-        this.checkUnlockConditions();
-        
-        this.saveQuests();
-        return rewards;
-    }
-    
-    // Débloquer le bear suivant
-    unlockNextBear(currentBearId) {
-        const unlockChain = ['bruno', 'luna', 'rusty', 'misty', 'ember'];
-        const currentIndex = unlockChain.indexOf(currentBearId);
-        if (currentIndex >= 0 && currentIndex < unlockChain.length - 1) {
-            const nextBearId = unlockChain[currentIndex + 1];
-            this.playerQuests[nextBearId].unlocked = true;
-        }
-    }
-    
-    // Vérifier les conditions de déblocage spéciales
-    checkUnlockConditions() {
-        // Luna se débloque après avoir collecté 1000 pollen total
-        const bruno = this.getBearProgress('bruno');
-        if (!this.playerQuests['luna'].unlocked && bruno.currentQuestIndex >= 2) {
-            this.playerQuests['luna'].unlocked = true;
-        }
-    }
-    
-    // Obtenir les bears débloqués
-    getUnlockedBears() {
-        return Object.keys(this.bears).filter(id => {
-            const progress = this.getBearProgress(id);
-            return progress.unlocked;
-        });
-    }
-    
-    // Dialogue actuel d'un bear
-    getCurrentDialogue(bearId) {
-        const bear = this.bears[bearId];
-        const progress = this.getBearProgress(bearId);
-        const quest = bear.quests[progress.currentQuestIndex];
-        
-        if (!quest) {
-            return { text: bear.dialogues.completed, isCompleted: true };
-        }
-        
-        const isComplete = this.checkQuestCompletion(bearId);
-        return {
-            text: isComplete ? quest.dialogueComplete : quest.dialogueStart,
-            isComplete: isComplete,
-            quest: quest
-        };
-    }
-}
-
-// ============================================
 // DONNÉES DES BEARS (JSON)
 // ============================================
 
@@ -545,6 +383,168 @@ const BEARS_DATA = {
         ]
     }
 };
+
+// ============================================
+// BEAR SYSTEM - Gestion des quêtes d'ours
+// ============================================
+
+class BearSystem {
+    constructor() {
+        this.bears = BEARS_DATA;
+        this.playerQuests = {}; // Stockage des progressions
+        this.loadQuests();
+    }
+    
+    loadQuests() {
+        const saved = localStorage.getItem('beeSwarm_bearQuests');
+        if (saved) {
+            this.playerQuests = JSON.parse(saved);
+        }
+    }
+    
+    saveQuests() {
+        localStorage.setItem('beeSwarm_bearQuests', JSON.stringify(this.playerQuests));
+    }
+    
+    // Récupère la progression actuelle d'un joueur pour un bear
+    getBearProgress(bearId) {
+        if (!this.playerQuests[bearId]) {
+            this.playerQuests[bearId] = {
+                unlocked: bearId === 'bruno', // Seul Bruno débloqué au début
+                currentQuestIndex: 0,
+                questProgress: {},
+                completed: false
+            };
+        }
+        return this.playerQuests[bearId];
+    }
+    
+    // Alias pour compatibilité avec game.js
+    getQuestProgress(bearId) {
+        return this.getBearProgress(bearId);
+    }
+    
+    // Vérifier si une quête est complétée
+    checkQuestCompletion(bearId) {
+        const bear = this.bears[bearId];
+        const progress = this.getBearProgress(bearId);
+        const quest = bear.quests[progress.currentQuestIndex];
+        
+        if (!quest) return false;
+        
+        // Vérifier chaque objectif
+        let completed = true;
+        for (const objective of quest.objectives) {
+            const current = progress.questProgress[objective.type] || 0;
+            if (current < objective.target) {
+                completed = false;
+                break;
+            }
+        }
+        
+        return completed;
+    }
+    
+    // Mettre à jour la progression
+    updateProgress(type, amount) {
+        for (const bearId in this.playerQuests) {
+            const progress = this.playerQuests[bearId];
+            if (progress.unlocked && !progress.completed) {
+                const bear = this.bears[bearId];
+                const quest = bear.quests[progress.currentQuestIndex];
+                
+                if (quest) {
+                    for (const obj of quest.objectives) {
+                        if (obj.type === type) {
+                            progress.questProgress[type] = (progress.questProgress[type] || 0) + amount;
+                        }
+                    }
+                }
+            }
+        }
+        this.saveQuests();
+    }
+    
+    // Alias pour compatibilité avec game.js
+    updateQuestProgress(type, amount) {
+        return this.updateProgress(type, amount);
+    }
+    
+    // Compléter une quête et donner les récompenses
+    completeQuest(bearId) {
+        const progress = this.getBearProgress(bearId);
+        const bear = this.bears[bearId];
+        const quest = bear.quests[progress.currentQuestIndex];
+        
+        if (!quest || !this.checkQuestCompletion(bearId)) {
+            return null;
+        }
+        
+        // Donner récompenses
+        const rewards = { ...quest.rewards };
+        
+        // Passer à la quête suivante
+        progress.currentQuestIndex++;
+        progress.questProgress = {};
+        
+        // Débloquer le bear suivant si c'était la dernière quête
+        if (progress.currentQuestIndex >= bear.quests.length) {
+            progress.completed = true;
+            this.unlockNextBear(bearId);
+        }
+        
+        // Débloquer d'autres bears selon les conditions
+        this.checkUnlockConditions();
+        
+        this.saveQuests();
+        return rewards;
+    }
+    
+    // Débloquer le bear suivant
+    unlockNextBear(currentBearId) {
+        const unlockChain = ['bruno', 'luna', 'rusty', 'misty', 'ember'];
+        const currentIndex = unlockChain.indexOf(currentBearId);
+        if (currentIndex >= 0 && currentIndex < unlockChain.length - 1) {
+            const nextBearId = unlockChain[currentIndex + 1];
+            this.playerQuests[nextBearId].unlocked = true;
+        }
+    }
+    
+    // Vérifier les conditions de déblocage spéciales
+    checkUnlockConditions() {
+        // Luna se débloque après avoir collecté 1000 pollen total
+        const bruno = this.getBearProgress('bruno');
+        if (!this.playerQuests['luna'].unlocked && bruno.currentQuestIndex >= 2) {
+            this.playerQuests['luna'].unlocked = true;
+        }
+    }
+    
+    // Obtenir les bears débloqués
+    getUnlockedBears() {
+        return Object.keys(this.bears).filter(id => {
+            const progress = this.getBearProgress(id);
+            return progress.unlocked;
+        });
+    }
+    
+    // Dialogue actuel d'un bear
+    getCurrentDialogue(bearId) {
+        const bear = this.bears[bearId];
+        const progress = this.getBearProgress(bearId);
+        const quest = bear.quests[progress.currentQuestIndex];
+        
+        if (!quest) {
+            return { text: bear.dialogues.completed, isCompleted: true };
+        }
+        
+        const isComplete = this.checkQuestCompletion(bearId);
+        return {
+            text: isComplete ? quest.dialogueComplete : quest.dialogueStart,
+            isComplete: isComplete,
+            quest: quest
+        };
+    }
+}
 
 // Export pour utilisation
 if (typeof module !== 'undefined' && module.exports) {
