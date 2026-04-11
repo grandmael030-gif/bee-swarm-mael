@@ -1439,6 +1439,11 @@ class Game {
                                 ${currentQuest.rewards.pollen ? ` 🌸 ${currentQuest.rewards.pollen}` : ''}
                                 ${currentQuest.rewards.bee ? ` 🐝 ${currentQuest.rewards.bee}` : ''}
                             </div>
+                            ${this.bearSystem.checkQuestCompletion(bear.id) ? `
+                                <button class="claim-reward-btn" onclick="game.completeBearQuest('${bear.id}')">
+                                    🎁 Récupérer la récompense !
+                                </button>
+                            ` : ''}
                         </div>
                     `}
                 </div>
@@ -1446,6 +1451,29 @@ class Game {
         });
         
         bearsList.innerHTML = html;
+    }
+    
+    completeBearQuest(bearId) {
+        const result = this.bearSystem.completeQuest(bearId);
+        if (result) {
+            // Give rewards
+            if (result.rewards.honey) {
+                this.honey += result.rewards.honey;
+            }
+            if (result.rewards.pollen) {
+                this.pollen += result.rewards.pollen;
+            }
+            if (result.rewards.bee) {
+                this.spawnBee(result.rewards.bee);
+            }
+            
+            // Save and refresh display
+            this.saveGame();
+            this.displayBears();
+            this.updateUI();
+            
+            alert(`✅ ${result.bearName} : "${result.questName}" complétée !\n\nRécompenses reçues :\n${result.rewards.honey ? `🍯 ${result.rewards.honey} miel\n` : ''}${result.rewards.pollen ? `🌸 ${result.rewards.pollen} pollen\n` : ''}${result.rewards.bee ? `🐝 1 abeille ${result.rewards.bee}` : ''}`);
+        }
     }
     
     getUpgradesKey() {

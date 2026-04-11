@@ -1087,6 +1087,30 @@ body {
     margin-top: 15px;
 }
 
+.claim-reward-btn {
+    background: linear-gradient(135deg, #FFD700 0%, #FFA000 100%);
+    color: #3E2723;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 15px;
+    width: 100%;
+    box-shadow: 0 4px 10px rgba(255, 215, 0, 0.4);
+    transition: all 0.2s;
+}
+
+.claim-reward-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 15px rgba(255, 215, 0, 0.6);
+}
+
+.claim-reward-btn:active {
+    transform: scale(0.98);
+}
+
 /* Close Settings Button */
 #closeSettings {
     background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
