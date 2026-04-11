@@ -227,14 +227,14 @@
             <div class="modal-content settings-content">
                 <h2>⚙️ Réglages Admin</h2>
                 <div class="settings-group">
-                    <label>🌸 Nombre de fleurs: <span id="flowerCountValue">100</span></label>
-                    <input type="range" id="flowerCount" min="10" max="500" value="100" class="slider">
+                    <label for="flowerCount">🌸 Nombre de fleurs: <span id="flowerCountValue">100</span></label>
+                    <input type="range" id="flowerCount" min="10" max="500" value="100" class="slider" aria-label="Nombre de fleurs">
                 </div>
                 <div class="settings-group">
-                    <label>⚡ Vitesse regen fleurs:</label>
+                    <label for="flowerRegenValue">⚡ Vitesse regen fleurs:</label>
                     <div class="time-input-group">
-                        <input type="number" id="flowerRegenValue" value="50" min="1" class="time-number">
-                        <select id="flowerRegenUnit" class="time-unit">
+                        <input type="number" id="flowerRegenValue" value="50" min="1" class="time-number" aria-label="Valeur de régénération">
+                        <select id="flowerRegenUnit" class="time-unit" aria-label="Unité de temps">
                             <option value="ms">ms (millisecondes)</option>
                             <option value="s" selected>s (secondes)</option>
                             <option value="m">m (minutes)</option>
@@ -246,9 +246,8 @@
                     <small>Régénère toutes les <span id="regenDisplay">50s</span></small>
                 </div>
                 <div class="settings-group">
-                    <label>🍯 Taux conversion (<pollen>
-                    <2></2> = honey par défaut)</label>
-                    <select id="conversionRate" class="setting-select">
+                    <label for="conversionRate">🍯 Taux conversion (pollen/2 = honey par défaut)</label>
+                    <select id="conversionRate" class="setting-select" aria-label="Taux de conversion">
                         <option value="0.5">0.5x (pollen/2)</option>
                         <option value="1">1x (1:1)</option>
                         <option value="2">2x (x2 honey)</option>
@@ -257,8 +256,8 @@
                     </select>
                 </div>
                 <div class="settings-group">
-                    <label>💰 Honey de départ: <span id="startHoneyValue">0</span></label>
-                    <input type="range" id="startHoney" min="0" max="10000" value="0" step="100" class="slider">
+                    <label for="startHoney">💰 Honey de départ: <span id="startHoneyValue">0</span></label>
+                    <input type="range" id="startHoney" min="0" max="10000" value="0" step="100" class="slider" aria-label="Honey de départ">
                 </div>
                 <div class="settings-buttons">
                     <button id="saveSettings" class="save-btn">💾 Sauvegarder</button>
