@@ -16,8 +16,10 @@
             <!-- Public Account Section -->
             <div class="login-section public-section">
                 <h3>👤 Compte Joueur</h3>
-                <input type="text" id="usernameInput" placeholder="Ton pseudo..." maxlength="20">
-                <input type="password" id="userPasswordInput" placeholder="Mot de passe...">
+                <label for="usernameInput" class="sr-only">Pseudo</label>
+                <input type="text" id="usernameInput" placeholder="Ton pseudo..." maxlength="20" aria-label="Pseudo">
+                <label for="userPasswordInput" class="sr-only">Mot de passe</label>
+                <input type="password" id="userPasswordInput" placeholder="Mot de passe..." aria-label="Mot de passe">
                 <div class="login-buttons">
                     <button id="registerBtn" class="register-btn">📝 Créer un compte</button>
                     <button id="userLoginBtn" class="user-login-btn">� Se connecter</button>
@@ -37,8 +39,10 @@
             
             <!-- Admin Section -->
             <div class="admin-section">
-                <input type="email" id="emailInput" placeholder="Email admin..." value="">
-                <input type="password" id="passwordInput" placeholder="Mot de passe admin...">
+                <label for="emailInput" class="sr-only">Email admin</label>
+                <input type="email" id="emailInput" placeholder="Email admin..." value="" aria-label="Email admin">
+                <label for="passwordInput" class="sr-only">Mot de passe admin</label>
+                <input type="password" id="passwordInput" placeholder="Mot de passe admin..." aria-label="Mot de passe admin">
                 <button id="loginBtn" class="admin-login">🔐 Connexion Admin</button>
             </div>
             
