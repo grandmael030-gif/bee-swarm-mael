@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Bee Swarm Simulator - Web Edition</title>
+    <link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="screen active">
+        <div class="login-container">
+            <h1>🐝 Bee Swarm Simulator</h1>
+            <p class="subtitle">Crée ton compte ou connecte-toi pour sauvegarder ta progression !</p>
+            
+            <!-- Public Account Section -->
+            <div class="login-section public-section">
+                <h3>👤 Compte Joueur</h3>
+                <input type="text" id="usernameInput" placeholder="Ton pseudo..." maxlength="20">
+                <input type="password" id="userPasswordInput" placeholder="Mot de passe...">
+                <div class="login-buttons">
+                    <button id="registerBtn" class="register-btn">📝 Créer un compte</button>
+                    <button id="userLoginBtn" class="user-login-btn">� Se connecter</button>
+                </div>
+            </div>
+            
+            <div class="divider">
+                <span>ou</span>
+            </div>
+            
+            <!-- Quick Play -->
+            <button id="playPublicBtn" class="public-btn">🎮 Jouer sans compte (invité)</button>
+            
+            <div class="divider admin-divider">
+                <span>Admin</span>
+            </div>
+            
+            <!-- Admin Section -->
+            <div class="admin-section">
+                <input type="email" id="emailInput" placeholder="Email admin..." value="">
+                <input type="password" id="passwordInput" placeholder="Mot de passe admin...">
+                <button id="loginBtn" class="admin-login">🔐 Connexion Admin</button>
+            </div>
+            
+            <p id="loginError" class="error"></p>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen" class="screen">
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- UI Overlay -->
+        <div id="ui">
+            <div class="top-bar">
+                <div class="stat">
+                    <span>🍯</span>
+                    <span id="honey">0</span>
+                </div>
+                <div class="stat">
+                    <span>🌸</span>
+                    <span id="pollen">0</span>
+                </div>
+                <div class="stat">
+                    <span>🐝</span>
+                    <span id="bees">1</span>
+                </div>
+            </div>
+            
+            <!-- Bee Type Breakdown -->
+            <div class="bee-breakdown">
+                <div class="bee-type" id="bee-basic">
+                    <span>🐝</span>
+                    <span class="count">0</span>
+                </div>
+                <div class="bee-type" id="bee-red">
+                    <span>🔴</span>
+                    <span class="count">0</span>
+                </div>
+                <div class="bee-type" id="bee-blue">
+                    <span>🔵</span>
+                    <span class="count">0</span>
+                </div>
+                <div class="bee-type" id="bee-legendary">
+                    <span>👑</span>
+                    <span class="count">0</span>
+                </div>
+            </div>
+
+            <div class="bottom-controls">
+                <button id="makeHoneyBtn">Faire du miel</button>
+                <button id="shopBtn">Magasin</button>
+                <button id="upgradesBtn">⬆️ Upgrades</button>
+                <button id="spawnBeeBtn" class="admin-only hidden">+ Abeille</button>
+                <button id="settingsBtn" class="admin-only hidden">⚙️ Réglages</button>
+                <button id="resetBeesBtn" class="reset-immediate">🗑️ Reset</button>
+                <button id="logoutBtn" class="logout-btn">🚪 Déco</button>
+            </div>
+        </div>
+
+        <!-- Shop Modal -->
+        <div id="shopModal" class="modal hidden">
+            <div class="modal-content">
+                <h2>🛒 Magasin d'Abeilles</h2>
+                <div class="shop-items">
+                    <div class="shop-item" data-type="basic" data-cost="100">
+                        <div class="shop-info">
+                            <span>🐝 Abeille de Base</span>
+                            <span class="cost">100 🍯</span>
+                        </div>
+                        <button class="buy-max-btn" data-type="basic" data-cost="100">MAX</button>
+                    </div>
+                    <div class="shop-item" data-type="red" data-cost="500">
+                        <div class="shop-info">
+                            <span>🐝 Abeille Rouge</span>
+                            <span class="cost">500 🍯</span>
+                        </div>
+                        <button class="buy-max-btn" data-type="red" data-cost="500">MAX</button>
+                    </div>
+                    <div class="shop-item" data-type="blue" data-cost="1000">
+                        <div class="shop-info">
+                            <span>🐝 Abeille Bleue</span>
+                            <span class="cost">1000 🍯</span>
+                        </div>
+                        <button class="buy-max-btn" data-type="blue" data-cost="1000">MAX</button>
+                    </div>
+                    <div class="shop-item" data-type="legendary" data-cost="5000">
+                        <div class="shop-info">
+                            <span>👑 Abeille Légendaire</span>
+                            <span class="cost">5000 🍯</span>
+                        </div>
+                        <button class="buy-max-btn" data-type="legendary" data-cost="5000">MAX</button>
+                    </div>
+                </div>
+                <button id="closeShop">Fermer</button>
+            </div>
+        </div>
+
+        <!-- Upgrades Modal -->
+        <div id="upgradesModal" class="modal hidden">
+            <div class="modal-content upgrades-content">
+                <h2>⬆️ Upgrades Permanent</h2>
+                <div class="upgrades-list">
+                    <div class="upgrade-item" id="upgrade-speed" data-cost="500" data-level="0">
+                        <div class="upgrade-icon">⚡</div>
+                        <div class="upgrade-info">
+                            <h3>Vitesse des Abeilles</h3>
+                            <p>x2 vitesse de collecte</p>
+                            <span class="upgrade-cost">500 🍯</span>
+                        </div>
+                        <div class="upgrade-level">Niveau 0</div>
+                    </div>
+                    <div class="upgrade-item" id="upgrade-capacity" data-cost="1000" data-level="0">
+                        <div class="upgrade-icon">📦</div>
+                        <div class="upgrade-info">
+                            <h3>Capacité des Abeilles</h3>
+                            <p>x2 capacité de pollen</p>
+                            <span class="upgrade-cost">1000 🍯</span>
+                        </div>
+                        <div class="upgrade-level">Niveau 0</div>
+                    </div>
+                    <div class="upgrade-item" id="upgrade-auto" data-cost="5000" data-level="0">
+                        <div class="upgrade-icon">🤖</div>
+                        <div class="upgrade-info">
+                            <h3>Collecte Auto</h3>
+                            <p>+1 pollen/sec par abeille</p>
+                            <span class="upgrade-cost">5000 🍯</span>
+                        </div>
+                        <div class="upgrade-level">Niveau 0</div>
+                    </div>
+                    <div class="upgrade-item" id="upgrade-convert" data-cost="10000" data-level="0">
+                        <div class="upgrade-icon">🏭</div>
+                        <div class="upgrade-info">
+                            <h3>Conversion Auto</h3>
+                            <p>Convertit auto pollen → honey</p>
+                            <span class="upgrade-cost">10000 🍯</span>
+                        </div>
+                        <div class="upgrade-level">Niveau 0</div>
+                    </div>
+                    <div class="upgrade-item" id="upgrade-luck" data-cost="2500" data-level="0">
+                        <div class="upgrade-icon">🍀</div>
+                        <div class="upgrade-info">
+                            <h3>Chance</h3>
+                            <p>+10% pollen bonus par collecte</p>
+                            <span class="upgrade-cost">2500 🍯</span>
+                        </div>
+                        <div class="upgrade-level">Niveau 0</div>
+                    </div>
+                    <div class="upgrade-item" id="upgrade-bubble" data-cost="2000" data-level="0">
+                        <div class="upgrade-icon">🫧</div>
+                        <div class="upgrade-info">
+                            <h3>Bulle de Collecte</h3>
+                            <p>+10px rayon et +1 pollen/sec</p>
+                            <span class="upgrade-cost">2000 🍯</span>
+                        </div>
+                        <div class="upgrade-level">Niveau 0</div>
+                    </div>
+                    <div class="upgrade-item" id="upgrade-flowers" data-cost="5000" data-level="0">
+                        <div class="upgrade-icon">🌸</div>
+                        <div class="upgrade-info">
+                            <h3>Champ de Fleurs</h3>
+                            <p>+5 fleurs supplémentaires</p>
+                            <span class="upgrade-cost">5000 🍯</span>
+                        </div>
+                        <div class="upgrade-level">Niveau 0</div>
+                    </div>
+                    <div class="upgrade-item" id="upgrade-regen" data-cost="8000" data-level="0">
+                        <div class="upgrade-icon">⚡🌸</div>
+                        <div class="upgrade-info">
+                            <h3>Régénération Rapide</h3>
+                            <p>Les fleurs repoussent 20% plus vite</p>
+                            <span class="upgrade-cost">8000 🍯</span>
+                        </div>
+                        <div class="upgrade-level">Niveau 0</div>
+                    </div>
+                </div>
+                <button id="closeUpgrades" class="close-upgrades-btn">❌ Fermer</button>
+            </div>
+        </div>
+
+        <!-- Settings Modal (Admin Only) -->
+        <div id="settingsModal" class="modal hidden">
+            <div class="modal-content settings-content">
+                <h2>⚙️ Réglages Admin</h2>
+                <div class="settings-group">
+                    <label>🌸 Nombre de fleurs: <span id="flowerCountValue">100</span></label>
+                    <input type="range" id="flowerCount" min="10" max="500" value="100" class="slider">
+                </div>
+                <div class="settings-group">
+                    <label>⚡ Vitesse regen fleurs:</label>
+                    <div class="time-input-group">
+                        <input type="number" id="flowerRegenValue" value="50" min="1" class="time-number">
+                        <select id="flowerRegenUnit" class="time-unit">
+                            <option value="ms">ms (millisecondes)</option>
+                            <option value="s" selected>s (secondes)</option>
+                            <option value="m">m (minutes)</option>
+                            <option value="h">h (heures)</option>
+                            <option value="j">j (jours)</option>
+                            <option value="sem">sem (semaines)</option>
+                        </select>
+                    </div>
+                    <small>Régénère toutes les <span id="regenDisplay">50s</span></small>
+                </div>
+                <div class="settings-group">
+                    <label>🍯 Taux conversion (<pollen>
+                    <2></2> = honey par défaut)</label>
+                    <select id="conversionRate" class="setting-select">
+                        <option value="0.5">0.5x (pollen/2)</option>
+                        <option value="1">1x (1:1)</option>
+                        <option value="2">2x (x2 honey)</option>
+                        <option value="5">5x (x5 honey)</option>
+                        <option value="10">10x (x10 honey)</option>
+                    </select>
+                </div>
+                <div class="settings-group">
+                    <label>💰 Honey de départ: <span id="startHoneyValue">0</span></label>
+                    <input type="range" id="startHoney" min="0" max="10000" value="0" step="100" class="slider">
+                </div>
+                <div class="settings-buttons">
+                    <button id="saveSettings" class="save-btn">💾 Sauvegarder</button>
+                    <button id="closeSettings" class="close-btn">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Reload - uniquement en développement local -->
+    <script src="livereload.js?v=1"></script>
+    
+    <!-- Update Checker - pour GitHub Pages -->
+    <script src="updatechecker.js?v=1"></script>
+    
+    <script src="game.js?v=1"></script>
+</body>
+</html>

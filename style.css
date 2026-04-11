@@ -1,0 +1,938 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    touch-action: manipulation; /* Prevent double-tap zoom, allow interactions */
+    -webkit-text-size-adjust: 100%; /* Prevent text zoom on mobile */
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight */
+}
+
+/* Prevent zoom on all interactive elements */
+button, .shop-item, .upgrade-item, input, select {
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* Prevent zoom on canvas */
+#gameCanvas {
+    touch-action: none;
+}
+
+/* iOS specific - prevent callout and zoom */
+@supports (-webkit-touch-callout: none) {
+    * {
+        -webkit-touch-callout: none;
+    }
+    
+    /* Prevent zoom on rapid taps */
+    button, .shop-item, .upgrade-item {
+        touch-action: manipulation;
+    }
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #87CEEB 0%, #98FB98 100%);
+    overflow: hidden;
+    height: 100dvh; /* Dynamic viewport height - fixes mobile browser chrome issues */
+    height: 100vh; /* Fallback */
+    width: 100vw;
+    /* Safe area insets for notched phones */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+}
+
+.screen {
+    display: none;
+    width: 100%;
+    height: 100%;
+}
+
+.screen.active {
+    display: flex;
+}
+
+/* Login Screen */
+#loginScreen {
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+}
+
+.login-box {
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+}
+
+.login-box h1 {
+    color: #FFD700;
+    margin-bottom: 10px;
+    font-size: 28px;
+}
+
+.login-box p {
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.login-box input {
+    width: 100%;
+    padding: 15px;
+    margin: 10px 0;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    font-size: 16px;
+}
+
+.login-box input:focus {
+    border-color: #FFD700;
+    outline: none;
+}
+
+.login-box button {
+    width: 100%;
+    padding: 15px;
+    margin-top: 15px;
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.login-box button:hover {
+    transform: scale(1.05);
+}
+
+.login-box button:active {
+    transform: scale(0.95);
+}
+
+.error {
+    color: #ff4444;
+    margin-top: 10px;
+}
+
+/* Login Container - Main wrapper */
+.login-container {
+    background: white;
+    padding: 30px 25px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    text-align: center;
+    max-width: 420px;
+    width: 92%;
+    max-height: 90vh;
+    overflow-y: auto;
+    margin: auto;
+}
+
+.login-container h1 {
+    color: #FFD700;
+    margin-bottom: 10px;
+    font-size: 26px;
+}
+
+.login-container input {
+    width: 100%;
+    padding: 12px 15px;
+    margin: 8px 0;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+.login-container input:focus {
+    border-color: #FFD700;
+    outline: none;
+}
+
+.login-container button {
+    width: 100%;
+    padding: 14px;
+    margin-top: 10px;
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.login-container button:hover {
+    transform: scale(1.02);
+}
+
+.login-container button:active {
+    transform: scale(0.98);
+}
+
+/* Game Screen */
+#gameScreen {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+#gameCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    /* Ensure canvas fills the screen on mobile */
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+#ui {
+    position: absolute;
+    top: env(safe-area-inset-top, 0);
+    left: 0;
+    width: 100%;
+    height: calc(100% - env(safe-area-inset-top, 0) - env(safe-area-inset-bottom, 0));
+    pointer-events: none;
+}
+
+.top-bar {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    pointer-events: auto;
+}
+
+/* Bee Type Breakdown */
+.bee-breakdown {
+    position: absolute;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 15px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px 20px;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    pointer-events: auto;
+}
+
+.bee-type {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.bee-type .count {
+    color: #333;
+    min-width: 25px;
+    text-align: center;
+}
+
+.stat {
+    background: rgba(255,255,255,0.95);
+    padding: 10px 20px;
+    border-radius: 25px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: bold;
+    font-size: 18px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.bottom-controls {
+    position: absolute;
+    bottom: max(20px, env(safe-area-inset-bottom)); /* Respect safe area on mobile */
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    pointer-events: auto;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 95vw;
+    padding: 0 10px;
+}
+
+.bottom-controls button {
+    padding: 15px 25px;
+    border: none;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+#makeHoneyBtn {
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    color: white;
+}
+
+#shopBtn {
+    background: linear-gradient(135deg, #9370DB 0%, #8A2BE2 100%);
+    color: white;
+}
+
+#spawnBeeBtn {
+    background: linear-gradient(135deg, #32CD32 0%, #228B22 100%);
+    color: white;
+}
+
+.bottom-controls button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+}
+
+.bottom-controls button:active {
+    transform: translateY(0);
+}
+
+/* Modal */
+.modal {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: auto;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+/* Admin only button */
+.admin-only.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    max-width: 400px;
+    width: 90%;
+    max-height: 80%;
+    overflow-y: auto;
+}
+
+.modal-content h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #FFD700;
+}
+
+.shop-items {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.shop-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    margin: 10px 0;
+    background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    gap: 10px;
+}
+
+.shop-item:hover {
+    background: linear-gradient(135deg, #e0e0e0 0%, #d0d0d0 100%);
+    transform: translateX(5px);
+}
+
+.shop-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.shop-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.shop-info .cost {
+    font-size: 12px;
+    color: #666;
+    margin-top: 3px;
+}
+
+.buy-max-btn {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 50px;
+}
+
+.buy-max-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 3px 10px rgba(255, 0, 0, 0.3);
+}
+
+.buy-max-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+#closeShop {
+    width: 100%;
+    padding: 15px;
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* Settings Modal */
+.settings-content {
+    max-width: 350px;
+}
+
+.settings-group {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.time-input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.time-number {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    text-align: center;
+}
+
+.time-unit {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+}
+
+.settings-group small {
+    color: #666;
+    font-size: 12px;
+}
+
+.danger-zone {
+    background: #ffe6e6;
+    border: 2px solid #ff4444;
+}
+
+.danger-zone label {
+    color: #ff4444;
+}
+
+.reset-btn {
+    width: 100%;
+    padding: 12px;
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.reset-btn:hover {
+    background: #cc0000;
+}
+
+.settings-group label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: #333;
+}
+
+.slider {
+    width: 100%;
+    height: 8px;
+    border-radius: 5px;
+    background: #ddd;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #FFD700;
+    cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #FFD700;
+    cursor: pointer;
+}
+
+.setting-select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 2px solid #ddd;
+    font-size: 14px;
+    background: white;
+}
+
+.settings-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.settings-buttons button {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.save-btn {
+    background: linear-gradient(135deg, #32CD32 0%, #228B22 100%);
+    color: white;
+}
+
+.close-btn {
+    background: #ddd;
+    color: #333;
+}
+
+/* Upgrades Modal */
+.upgrades-content {
+    max-width: 400px;
+    max-height: 80vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+}
+
+.upgrades-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.upgrade-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    border: 2px solid #ddd;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.upgrade-item:hover {
+    border-color: #FFD700;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.upgrade-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    border-color: #ccc;
+}
+
+.upgrade-item.disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.upgrade-item.purchased {
+    border-color: #32CD32;
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+}
+
+.upgrade-icon {
+    font-size: 32px;
+    margin-right: 15px;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.upgrade-info {
+    flex: 1;
+}
+
+.upgrade-info h3 {
+    margin: 0 0 5px 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.upgrade-info p {
+    margin: 0 0 8px 0;
+    font-size: 12px;
+    color: #666;
+}
+
+.upgrade-cost {
+    font-size: 14px;
+    font-weight: bold;
+    color: #FFD700;
+    background: #fff8e1;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.upgrade-level {
+    font-size: 12px;
+    font-weight: bold;
+    color: #666;
+    background: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    body {
+        height: 100dvh; /* Force dynamic viewport height on mobile */
+        padding-bottom: env(safe-area-inset-bottom, 20px);
+    }
+    
+    .stat {
+        padding: 8px 15px;
+        font-size: 16px;
+    }
+    
+    .bottom-controls {
+        bottom: max(10px, env(safe-area-inset-bottom, 10px));
+        gap: 8px;
+    }
+    
+    .bottom-controls button {
+        padding: 10px 16px;
+        font-size: 12px;
+        border-radius: 20px;
+    }
+    
+    .login-box, .login-container {
+        padding: 20px 15px;
+        width: 95%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    .login-box h1, .login-container h1 {
+        font-size: 22px;
+    }
+    
+    .login-section {
+        padding: 15px;
+    }
+    
+    .login-buttons {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .login-buttons button {
+        width: 100%;
+    }
+    
+    /* Mobile upgrades modal - full screen scrollable */
+    .modal-content {
+        max-height: 85vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .upgrades-content {
+        max-height: 85vh;
+        padding: 15px;
+    }
+    
+    .upgrades-list {
+        gap: 10px;
+    }
+    
+    .upgrade-item {
+        padding: 12px;
+    }
+    
+    .upgrade-icon {
+        font-size: 24px;
+        width: 40px;
+        height: 40px;
+    }
+    
+    .upgrade-info h3 {
+        font-size: 14px;
+    }
+}
+
+/* Small phones (iPhone SE, etc) */
+@media (max-width: 375px) {
+    .bottom-controls {
+        bottom: max(5px, env(safe-area-inset-bottom, 5px));
+        gap: 5px;
+    }
+    
+    .bottom-controls button {
+        padding: 8px 12px;
+        font-size: 11px;
+        border-radius: 15px;
+    }
+    
+    .stat {
+        padding: 6px 12px;
+        font-size: 14px;
+    }
+    
+    .login-container {
+        padding: 15px 12px;
+        width: 96%;
+    }
+    
+    .login-container h1 {
+        font-size: 20px;
+    }
+    
+    .login-container input {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    
+    .login-container button {
+        padding: 12px;
+        font-size: 14px;
+    }
+}
+
+/* Public vs Admin buttons */
+.login-container .subtitle {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.admin-login {
+    background: linear-gradient(135deg, #8B4513 0%, #654321 100%) !important;
+}
+
+.public-btn {
+    background: linear-gradient(135deg, #32CD32 0%, #228B22 100%) !important;
+    margin-top: 10px;
+}
+
+/* Public User Login Section */
+.login-section {
+    background: rgba(255,255,255,0.9);
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 15px;
+}
+
+.login-section h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 18px;
+}
+
+.login-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.login-buttons button {
+    flex: 1;
+    padding: 12px 8px;
+    font-size: 14px;
+}
+
+.register-btn {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%) !important;
+}
+
+.user-login-btn {
+    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%) !important;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 15px 0;
+    color: #666;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #ddd;
+}
+
+.divider span {
+    padding: 0 10px;
+    font-size: 14px;
+}
+
+.admin-divider {
+    margin-top: 20px;
+    color: #999;
+}
+
+.admin-divider span {
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.admin-section {
+    opacity: 1;
+    transition: opacity 0.3s;
+    margin-top: 10px;
+    padding: 15px;
+    background: rgba(139, 69, 19, 0.1);
+    border-radius: 10px;
+    border: 1px solid rgba(139, 69, 19, 0.3);
+}
+
+.admin-section:hover {
+    background: rgba(139, 69, 19, 0.15);
+}
+
+.admin-section input {
+    background: #fff8f0;
+    border-color: #d4a574;
+}
+
+.admin-section input:focus {
+    border-color: #8B4513;
+}
+
+.admin-section.collapsed {
+    max-height: 0;
+    overflow: hidden;
+    padding: 0;
+    margin: 0;
+    opacity: 0;
+}
+
+/* User info display */
+.user-info {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255,255,255,0.9);
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+    z-index: 100;
+}
+
+.logout-btn {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%) !important;
+    font-size: 12px !important;
+}
+
+/* Reset button - available to everyone */
+.reset-immediate {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+    color: white;
+    font-weight: bold;
+}
+
+/* Close Upgrades Button - Big and Beautiful */
+.close-upgrades-btn {
+    background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%) !important;
+    color: white !important;
+    font-size: 20px !important;
+    font-weight: bold !important;
+    padding: 15px 40px !important;
+    border: 3px solid #ff8888 !important;
+    border-radius: 15px !important;
+    box-shadow: 0 6px 20px rgba(255, 0, 0, 0.4) !important;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.close-upgrades-btn:hover {
+    transform: scale(1.05) !important;
+    box-shadow: 0 8px 30px rgba(255, 0, 0, 0.6) !important;
+    background: linear-gradient(135deg, #ff5555 0%, #dd1111 100%) !important;
+}
+
+.close-upgrades-btn:active {
+    transform: scale(0.95) !important;
+}
