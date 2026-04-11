@@ -1239,6 +1239,7 @@ class Game {
     
     convertPollen() {
         if (this.pollen > 0) {
+            const pollenBefore = this.pollen;
             const honeyMade = Math.floor(this.pollen / 2);
             this.honey += honeyMade;
             
@@ -1249,6 +1250,8 @@ class Game {
             this.pollen = 0;
             this.updateUI();
             this.saveGame(); // Save after converting
+            
+            console.log(`🍯 Conversion: ${pollenBefore} pollen → ${honeyMade} honey. Pollen now: ${this.pollen}`);
             
             // Spawn honey particles
             for (let i = 0; i < 8; i++) {
