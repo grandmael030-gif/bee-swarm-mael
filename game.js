@@ -510,7 +510,10 @@ class Bee {
             if (dist < collectionRange && this.target.pollen > 0) {
                 const collected = Math.min(1, this.target.pollen);
                 this.carrying += collected;
-                this.target.pollen -= collected;
+                // Only remove pollen if not in infinite flowers mode
+                if (!game.infiniteFlowers) {
+                    this.target.pollen -= collected;
+                }
                 this.target.visited = true;
                 
                 // For fast bees, immediately find next flower to maximize efficiency
@@ -531,7 +534,10 @@ class Bee {
                 if (newDist < collectionRange && this.target.pollen > 0 && this.carrying < this.capacity) {
                     const collected = Math.min(1, this.target.pollen);
                     this.carrying += collected;
-                    this.target.pollen -= collected;
+                    // Only remove pollen if not in infinite flowers mode
+                    if (!game.infiniteFlowers) {
+                        this.target.pollen -= collected;
+                    }
                     this.target.visited = true;
                 }
             } else {
@@ -1366,8 +1372,18 @@ class Game {
         this.maxFlowers = 20 + flowerBonus;
         
         // Apply regen upgrade: 20% faster per level (multiplier)
-        const regenMultiplier = Math.pow(0.8, this.upgrades.regen); // 0.8^level = faster regen
+        let regenMultiplier = Math.pow(0.8, this.upgrades.regen); // 0.8^level = faster regen
+        
+        // Bonus: Speed levels beyond 7 further increase regen speed (5% faster per extra level)
+        if (speedLevel > 7) {
+            const extraSpeedBonus = Math.pow(0.95, speedLevel - 7); // 5% faster per level above 7
+            regenMultiplier *= extraSpeedBonus;
+        }
+        
         this.flowerRegenMultiplier = regenMultiplier;
+        
+        // Infinite flowers mode: if speed >= 7 AND regen >= 10, flowers never lose pollen
+        this.infiniteFlowers = (speedLevel >= 7 && this.upgrades.regen >= 10);
         
         // Update existing flowers with new regen speed
         this.flowers.forEach(flower => {
@@ -1655,7 +1671,10 @@ class Game {
                         if (flower.pollen > 0) {
                             const amount = Math.min(5, flower.pollen); // Collect up to 5 per flower
                             totalCollected += amount;
-                            flower.pollen -= amount;
+                            // Only remove pollen if not in infinite flowers mode
+                            if (!this.infiniteFlowers) {
+                                flower.pollen -= amount;
+                            }
                             flower.visited = true;
                         }
                     }
@@ -1729,7 +1748,10 @@ class Game {
                     // Player is touching this flower - collect pollen
                     flowersTouched++;
                     const amount = Math.min(collectAmount, flower.pollen); // Collect upgraded amount per frame
-                    flower.pollen -= amount;
+                    // Only remove pollen if not in infinite flowers mode
+                    if (!this.infiniteFlowers) {
+                        flower.pollen -= amount;
+                    }
                     flower.visited = true;
                     collected += amount;
                     
