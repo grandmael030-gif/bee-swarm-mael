@@ -776,6 +776,9 @@ class Game {
         this.upgrades = { speed: 0, capacity: 0, auto: 0, convert: 0, luck: 0, flowers: 0, regen: 0, bubble: 0 };
         this.loadUpgrades();
         
+        // Load rebirth data
+        this.loadRebirthData();
+        
         // Initialize Bear System (Quests)
         this.bearSystem = new BearSystem();
         
@@ -830,6 +833,9 @@ class Game {
         // Bears (Quests)
         document.getElementById('bearsBtn').addEventListener('click', () => this.openBears());
         document.getElementById('closeBears').addEventListener('click', () => this.closeBears());
+        
+        // Rebirth button
+        document.getElementById('rebirthBtn').addEventListener('click', () => this.rebirth());
         
         // Upgrade items click
         document.querySelectorAll('.upgrade-item').forEach(item => {
@@ -923,6 +929,80 @@ class Game {
     
     closeSettings() {
         document.getElementById('settingsModal').classList.add('hidden');
+    }
+    
+    loadRebirthData() {
+        const saved = localStorage.getItem('beeSwarm_rebirth');
+        if (saved) {
+            const data = JSON.parse(saved);
+            this.rebirthCount = data.count || 0;
+            this.rebirthMultiplier = data.multiplier || 1;
+        } else {
+            this.rebirthCount = 0;
+            this.rebirthMultiplier = 1;
+        }
+    }
+    
+    saveRebirthData() {
+        localStorage.setItem('beeSwarm_rebirth', JSON.stringify({
+            count: this.rebirthCount,
+            multiplier: this.rebirthMultiplier
+        }));
+    }
+    
+    rebirth() {
+        // Require at least 1 million honey to rebirth
+        if (this.honey < 1000000) {
+            alert(`✨ Pas assez de miel pour la Renaissance !\n\nBesoin de: 1,000,000 🍯\nTu as: ${this.honey.toLocaleString()} 🍯\n\nContinue à jouer pour accumuler plus de miel !`);
+            return;
+        }
+        
+        const confirmMsg = `✨ Es-tu sûr de vouloir effectuer une Renaissance ?\n\n` +
+            `Tu vas PERDRE:\n` +
+            `• ${this.honey.toLocaleString()} miel 🍯\n` +
+            `• ${this.pollen.toLocaleString()} pollen 🌸\n` +
+            `• ${this.bees.length} abeilles 🐝\n` +
+            `• Tous tes upgrades ⬆️\n\n` +
+            `TU GAGNES:\n` +
+            `• +1 Point de Renaissance (${this.rebirthCount + 1} total)\n` +
+            `• +10% bonus permanent sur tout le pollen collecté\n` +
+            `• Nouveau départ avec bonus x${(this.rebirthMultiplier + 0.1).toFixed(1)}`;
+        
+        if (!confirm(confirmMsg)) return;
+        
+        // Perform rebirth
+        this.rebirthCount++;
+        this.rebirthMultiplier += 0.1; // +10% per rebirth
+        
+        // Reset game state
+        this.honey = 0;
+        this.pollen = 0;
+        this.bees = [];
+        
+        // Release all targeted flowers
+        this.flowers.forEach(flower => {
+            flower.targetedBy = null;
+        });
+        
+        // Reset upgrades
+        this.upgrades = { speed: 0, capacity: 0, auto: 0, convert: 0, luck: 0, flowers: 0, regen: 0, bubble: 0 };
+        this.saveUpgrades();
+        this.applyUpgrades();
+        
+        // Save rebirth data
+        this.saveRebirthData();
+        
+        // Respawn one basic bee
+        this.spawnBee('basic');
+        
+        // Update UI
+        this.updateUI();
+        this.saveGame();
+        
+        alert(`✨ Renaissance complète !\n\n` +
+            `Tu as maintenant ${this.rebirthCount} points de Renaissance !\n` +
+            `Bonus pollen: x${this.rebirthMultiplier.toFixed(1)}\n\n` +
+            `Bon courage pour ta nouvelle aventure ! 🐝✨`);
     }
     
     saveSettings() {
@@ -1223,10 +1303,12 @@ class Game {
     }
     
     addPollen(amount) {
-        this.pollen += amount;
+        // Apply rebirth multiplier bonus
+        const bonusAmount = Math.floor(amount * this.rebirthMultiplier);
+        this.pollen += bonusAmount;
         this.updateUI();
         
-        // Track quest progress for pollen collection
+        // Track quest progress for pollen collection (base amount, not multiplied)
         if (this.bearSystem) {
             this.bearSystem.updateQuestProgress('collect_pollen', amount);
         }
@@ -1739,6 +1821,17 @@ class Game {
         this.honeyEl.textContent = this.honey;
         this.pollenEl.textContent = this.pollen;
         this.beesEl.textContent = this.bees.length;
+        
+        // Update rebirth bonus display
+        const rebirthBonusEl = document.getElementById('rebirthBonus');
+        if (rebirthBonusEl) {
+            if (this.rebirthCount > 0) {
+                rebirthBonusEl.textContent = `✨ x${this.rebirthMultiplier.toFixed(1)}`;
+                rebirthBonusEl.classList.remove('hidden');
+            } else {
+                rebirthBonusEl.classList.add('hidden');
+            }
+        }
         
         // Count bees by type
         const basicCount = this.bees.filter(b => b.type === 'basic').length;

@@ -261,6 +261,23 @@ body {
     text-align: center;
 }
 
+.rebirth-bonus {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 15px;
+    background: linear-gradient(135deg, #FFD700 0%, #FFA000 100%);
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #3E2723;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+}
+
+.rebirth-bonus.hidden {
+    display: none;
+}
+
 .stat {
     background: rgba(255,255,255,0.95);
     padding: 10px 20px;
