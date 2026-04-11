@@ -1359,10 +1359,18 @@ class Game {
     
     buyUpgrade(upgradeId) {
         const type = upgradeId.replace('upgrade-', '');
+        const currentLevel = this.upgrades[type];
+        
+        // Max level is 10 for all upgrades
+        if (currentLevel >= 10) {
+            alert('🏆 Niveau MAX atteint !\nCet upgrade est déjà au niveau maximum (10).');
+            return;
+        }
+        
         const cost = this.getUpgradeCost(type);
         
         // Enable teleport mode at level 7 (message only for info)
-        if (type === 'speed' && this.upgrades.speed === 6) {
+        if (type === 'speed' && currentLevel === 6) {
             alert('⚡ Niveau 7 débloquera la TÉLÉPORTATION !\nLes abeilles iront à la vitesse de l\'éclair ! 🚀');
         }
         
@@ -1441,18 +1449,24 @@ class Game {
                 levelEl.textContent = 'Niveau ' + level;
             }
             
-            // Update cost display
+            // Update cost display - show MAX if level 10
             const costEl = item.querySelector('.upgrade-cost');
             if (costEl) {
-                costEl.textContent = cost + ' 🍯';
+                if (level >= 10) {
+                    costEl.textContent = '🏆 MAX';
+                    costEl.classList.add('max-level');
+                } else {
+                    costEl.textContent = cost + ' 🍯';
+                    costEl.classList.remove('max-level');
+                }
             }
             
             // Update data attributes
             item.dataset.level = level;
-            item.dataset.cost = cost;
+            item.dataset.cost = level >= 10 ? 'MAX' : cost;
             
-            // Disable if can't afford
-            if (this.honey < cost) {
+            // Disable if can't afford or max level reached
+            if (level >= 10 || this.honey < cost) {
                 item.classList.add('disabled');
             } else {
                 item.classList.remove('disabled');

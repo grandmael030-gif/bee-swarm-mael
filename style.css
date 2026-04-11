@@ -660,6 +660,11 @@ body {
     border-radius: 6px;
 }
 
+.upgrade-cost.max-level {
+    background: #e8f5e9;
+    color: #4CAF50;
+}
+
 .upgrade-level {
     font-size: 12px;
     font-weight: bold;
