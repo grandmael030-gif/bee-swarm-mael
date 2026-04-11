@@ -780,7 +780,12 @@ class Game {
         this.loadRebirthData();
         
         // Initialize Bear System (Quests)
-        this.bearSystem = new BearSystem();
+        try {
+            this.bearSystem = new BearSystem();
+            console.log('✅ BearSystem initialized:', this.bearSystem);
+        } catch (e) {
+            console.error('❌ BearSystem init failed:', e);
+        }
         
         this.setupUI();
         this.setupInputs();
@@ -831,11 +836,24 @@ class Game {
         document.getElementById('closeUpgrades').addEventListener('click', () => this.closeUpgrades());
         
         // Bears (Quests)
-        document.getElementById('bearsBtn').addEventListener('click', () => this.openBears());
-        document.getElementById('closeBears').addEventListener('click', () => this.closeBears());
+        const bearsBtn = document.getElementById('bearsBtn');
+        const closeBearsBtn = document.getElementById('closeBears');
+        if (bearsBtn && closeBearsBtn) {
+            bearsBtn.addEventListener('click', () => this.openBears());
+            closeBearsBtn.addEventListener('click', () => this.closeBears());
+            console.log('✅ Bears buttons initialized');
+        } else {
+            console.error('❌ Bears buttons not found:', {bearsBtn, closeBearsBtn});
+        }
         
         // Rebirth button
-        document.getElementById('rebirthBtn').addEventListener('click', () => this.rebirth());
+        const rebirthBtn = document.getElementById('rebirthBtn');
+        if (rebirthBtn) {
+            rebirthBtn.addEventListener('click', () => this.rebirth());
+            console.log('✅ Rebirth button initialized');
+        } else {
+            console.error('❌ Rebirth button not found');
+        }
         
         // Upgrade items click
         document.querySelectorAll('.upgrade-item').forEach(item => {
