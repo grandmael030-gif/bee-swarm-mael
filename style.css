@@ -305,10 +305,11 @@ body {
 }
 
 .bottom-controls button {
-    padding: 15px 25px;
+    padding: 12px 18px;
     border: none;
-    border-radius: 25px;
-    font-size: 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    white-space: nowrap;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s;
