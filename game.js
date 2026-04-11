@@ -495,8 +495,8 @@ class Bee {
                 this.vx = (dx / dist) * this.speed;
                 this.vy = (dy / dist) * this.speed;
             }
-        } else if (!this.target || this.target.pollen <= 0) {
-            // Release previous flower before finding new one
+        } else if (!this.target || this.target.pollen <= 0 || (this.target.targetedBy && this.target.targetedBy !== this)) {
+            // Release previous flower before finding new one (if target is empty or taken by another bee)
             if (this.target && this.target.targetedBy === this) {
                 this.target.targetedBy = null;
             }
