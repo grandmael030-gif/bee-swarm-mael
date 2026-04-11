@@ -500,7 +500,11 @@ class Bee {
             if (this.target && this.target.targetedBy === this) {
                 this.target.targetedBy = null;
             }
-            this.findNearestFlower();
+            // Add cooldown to prevent infinite loops when searching for flowers
+            if (!this.lastFlowerSearch || Date.now() - this.lastFlowerSearch > 100) {
+                this.lastFlowerSearch = Date.now();
+                this.findNearestFlower();
+            }
         }
         
         if (this.target && this.carrying < this.capacity) {
@@ -524,7 +528,10 @@ class Bee {
                 
                 // For fast bees, immediately find next flower to maximize efficiency
                 if (this.teleport && this.carrying < this.capacity) {
-                    this.findNearestFlower();
+                    if (!this.lastFlowerSearch || Date.now() - this.lastFlowerSearch > 50) {
+                        this.lastFlowerSearch = Date.now();
+                        this.findNearestFlower();
+                    }
                 }
             } else if (this.teleport && dist > collectionRange) {
                 // Teleport mode: instantly move closer to target (but not too close to avoid skipping)
