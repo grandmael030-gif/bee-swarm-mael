@@ -1394,7 +1394,7 @@ class Game {
         
         let html = '';
         
-        this.bearSystem.bears.forEach(bear => {
+        Object.values(this.bearSystem.bears).forEach(bear => {
             const progress = this.bearSystem.getQuestProgress(bear.id);
             const currentQuest = bear.quests[progress.currentQuestIndex];
             const isCompleted = progress.currentQuestIndex >= bear.quests.length;
@@ -1422,7 +1422,7 @@ class Game {
                                 ${currentQuest.objectives.map(obj => `
                                     <div class="objective">
                                         <span>${obj.type === 'collect_pollen' ? '🌸' : obj.type === 'collect_honey' ? '🍯' : obj.type === 'buy_bees' ? '🐝' : '⭐'} ${obj.description}</span>
-                                        <span class="progress">${progress.currentProgress[obj.type] || 0}/${obj.amount}</span>
+                                        <span class="progress">${progress.questProgress[obj.type] || 0}/${obj.target}</span>
                                     </div>
                                 `).join('')}
                             </div>
@@ -1430,7 +1430,7 @@ class Game {
                                 <strong>Récompenses:</strong>
                                 ${currentQuest.rewards.honey ? ` 🍯 ${currentQuest.rewards.honey}` : ''}
                                 ${currentQuest.rewards.pollen ? ` 🌸 ${currentQuest.rewards.pollen}` : ''}
-                                ${currentQuest.rewards.bees.length > 0 ? ` 🐝 ${currentQuest.rewards.bees.join(', ')}` : ''}
+                                ${currentQuest.rewards.bee ? ` 🐝 ${currentQuest.rewards.bee}` : ''}
                             </div>
                         </div>
                     `}

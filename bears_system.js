@@ -74,6 +74,11 @@ class BearSystem {
         this.saveQuests();
     }
     
+    // Alias pour compatibilité avec game.js
+    updateQuestProgress(type, amount) {
+        return this.updateProgress(type, amount);
+    }
+    
     // Compléter une quête et donner les récompenses
     completeQuest(bearId) {
         const progress = this.getBearProgress(bearId);
