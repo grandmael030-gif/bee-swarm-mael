@@ -496,6 +496,10 @@ class Bee {
                 this.vy = (dy / dist) * this.speed;
             }
         } else if (!this.target || this.target.pollen <= 0) {
+            // Release previous flower before finding new one
+            if (this.target && this.target.targetedBy === this) {
+                this.target.targetedBy = null;
+            }
             this.findNearestFlower();
         }
         
@@ -572,7 +576,7 @@ class Bee {
     }
     
     findNearestFlower() {
-        // Find nearest flower with pollen (within boundaries)
+        // Find nearest flower with pollen that isn't already targeted by another bee
         let nearest = null;
         let minDist = Infinity;
         
@@ -583,16 +587,22 @@ class Bee {
         const maxY = game.maxY || (game.height - 30);
         
         for (const flower of game.flowers) {
-            // Only consider flowers within boundaries
+            // Only consider flowers within boundaries that have pollen and aren't targeted
             if (flower.pollen > 0 && 
                 flower.x >= minX && flower.x <= maxX &&
-                flower.y >= minY && flower.y <= maxY) {
+                flower.y >= minY && flower.y <= maxY &&
+                (!flower.targetedBy || flower.targetedBy === this)) { // Only untargeted flowers or already targeted by this bee
                 const d = Math.hypot(flower.x - this.x, flower.y - this.y);
                 if (d < minDist) {
                     minDist = d;
                     nearest = flower;
                 }
             }
+        }
+        
+        // Claim this flower for this bee
+        if (nearest && nearest.targetedBy !== this) {
+            nearest.targetedBy = this;
         }
         
         this.target = nearest;
@@ -644,6 +654,7 @@ class Flower {
         this.color = ['#FF69B4', '#FF1493', '#FF69B4', '#FF6347'][Math.floor(Math.random() * 4)];
         this.regenInterval = 5000; // Default 5 seconds in ms
         this.lastRegen = Date.now();
+        this.targetedBy = null; // Track which bee is targeting this flower (1 bee per flower)
     }
     
     update() {
@@ -948,6 +959,12 @@ class Game {
     resetBees() {
         // Immediate reset without confirmation
         if (this.bees.length > 1) {
+            // Release all flowers targeted by bees being removed
+            this.bees.forEach((bee, index) => {
+                if (index > 0 && bee.target && bee.target.targetedBy === bee) {
+                    bee.target.targetedBy = null;
+                }
+            });
             this.bees = [this.bees[0]];
             this.updateUI();
             this.saveGame();
@@ -1484,6 +1501,11 @@ class Game {
             
             if (exchangeIndex !== -1) {
                 // Exchange: remove worst bee, add better one
+                // Release the flower targeted by the bee being removed
+                const removedBee = this.bees[exchangeIndex];
+                if (removedBee.target && removedBee.target.targetedBy === removedBee) {
+                    removedBee.target.targetedBy = null;
+                }
                 this.bees.splice(exchangeIndex, 1);
                 this.honey -= cost;
                 this.spawnBee(type);
@@ -1553,6 +1575,11 @@ class Game {
                         }
                         
                         if (exchangeIndex !== -1 && this.honey >= cost) {
+                            // Release the flower targeted by the bee being removed
+                            const removedBee = this.bees[exchangeIndex];
+                            if (removedBee.target && removedBee.target.targetedBy === removedBee) {
+                                removedBee.target.targetedBy = null;
+                            }
                             this.bees.splice(exchangeIndex, 1);
                             this.honey -= cost;
                             totalCost += cost;
