@@ -424,6 +424,53 @@ class BearSystem {
         return this.getBearProgress(bearId);
     }
     
+    // Initialiser les baselines pour les quêtes d'upgrade (appelé quand une quête devient active)
+    initUpgradeBaselines(bearId, currentUpgrades) {
+        const progress = this.getBearProgress(bearId);
+        const bear = this.bears[bearId];
+        const quest = bear.quests[progress.currentQuestIndex];
+        
+        if (!quest) return;
+        
+        // Pour chaque objectif d'upgrade, capturer le niveau actuel comme baseline
+        for (const obj of quest.objectives) {
+            if ((obj.type === 'buy_upgrade' || obj.type === 'upgrade_level') && obj.upgradeType) {
+                const baselineKey = `baseline_${obj.upgradeType}`;
+                // Si pas de baseline encore définie, la définir
+                if (progress.questProgress[baselineKey] === undefined) {
+                    const currentLevel = currentUpgrades[obj.upgradeType] || 0;
+                    progress.questProgress[baselineKey] = currentLevel;
+                    console.log(`📊 Baseline ${bearId}: ${obj.upgradeType} = ${currentLevel} (target: +${obj.target})`);
+                }
+            }
+        }
+        this.saveQuests();
+    }
+    
+    // Mettre à jour la progression des quêtes d'upgrade basée sur les niveaux actuels
+    updateUpgradeProgress(bearId, currentUpgrades) {
+        const progress = this.getBearProgress(bearId);
+        const bear = this.bears[bearId];
+        const quest = bear.quests[progress.currentQuestIndex];
+        
+        if (!quest || !progress.unlocked || progress.completed) return;
+        
+        for (const obj of quest.objectives) {
+            if ((obj.type === 'buy_upgrade' || obj.type === 'upgrade_level') && obj.upgradeType) {
+                const baselineKey = `baseline_${obj.upgradeType}`;
+                const baseline = progress.questProgress[baselineKey];
+                
+                // Si baseline définie, calculer le progrès
+                if (baseline !== undefined) {
+                    const currentLevel = currentUpgrades[obj.upgradeType] || 0;
+                    const progressMade = Math.max(0, currentLevel - baseline);
+                    progress.questProgress[obj.type] = progressMade;
+                }
+            }
+        }
+        this.saveQuests();
+    }
+    
     // Vérifier si une quête est complétée
     checkQuestCompletion(bearId) {
         const bear = this.bears[bearId];
@@ -435,10 +482,26 @@ class BearSystem {
         // Vérifier chaque objectif
         let completed = true;
         for (const objective of quest.objectives) {
-            const current = progress.questProgress[objective.type] || 0;
-            if (current < objective.target) {
-                completed = false;
-                break;
+            // Pour les quêtes d'upgrade, vérifier le progrès depuis la baseline
+            if ((objective.type === 'buy_upgrade' || objective.type === 'upgrade_level') && objective.upgradeType) {
+                const baselineKey = `baseline_${objective.upgradeType}`;
+                const baseline = progress.questProgress[baselineKey];
+                if (baseline !== undefined) {
+                    // Le progrès est stocké dans questProgress[objective.type]
+                    const current = progress.questProgress[objective.type] || 0;
+                    if (current < objective.target) {
+                        completed = false;
+                    }
+                } else {
+                    completed = false;
+                }
+            } else {
+                // Pour les autres types de quêtes, comportement normal
+                const current = progress.questProgress[objective.type] || 0;
+                if (current < objective.target) {
+                    completed = false;
+                    break;
+                }
             }
         }
         

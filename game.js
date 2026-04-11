@@ -1473,6 +1473,15 @@ class Game {
         const bearsList = document.getElementById('bearsList');
         if (!bearsList || !this.bearSystem) return;
         
+        // Initialize baselines and update upgrade progress for all bears
+        Object.values(this.bearSystem.bears).forEach(bear => {
+            const progress = this.bearSystem.getQuestProgress(bear.id);
+            if (progress.unlocked && !progress.completed) {
+                this.bearSystem.initUpgradeBaselines(bear.id, this.upgrades);
+                this.bearSystem.updateUpgradeProgress(bear.id, this.upgrades);
+            }
+        });
+        
         let html = '';
         
         Object.values(this.bearSystem.bears).forEach(bear => {
@@ -1679,6 +1688,17 @@ class Game {
             this.applyUpgrades();
             this.updateUpgradesUI();
             this.updateUI();
+            
+            // Track upgrade purchase for quests - update progress for all unlocked bears
+            if (this.bearSystem) {
+                Object.values(this.bearSystem.bears).forEach(bear => {
+                    const progress = this.bearSystem.getQuestProgress(bear.id);
+                    if (progress.unlocked && !progress.completed) {
+                        this.bearSystem.updateQuestProgress('buy_upgrade', 1);
+                        this.bearSystem.updateUpgradeProgress(bear.id, this.upgrades);
+                    }
+                });
+            }
         } else {
             alert('Pas assez de miel ! Besoin de ' + cost + ' 🍯');
         }
