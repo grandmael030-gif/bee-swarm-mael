@@ -650,9 +650,13 @@ class Flower {
         // Regenerate pollen based on interval
         if (this.pollen < this.maxPollen) {
             const now = Date.now();
-            if (now - this.lastRegen >= this.regenInterval) {
-                this.pollen = Math.min(this.pollen + 10, this.maxPollen);
-                this.lastRegen = now;
+            const elapsed = now - this.lastRegen;
+            if (elapsed >= this.regenInterval) {
+                // Calculate how many regen cycles passed (for very fast regen)
+                const cycles = Math.floor(elapsed / this.regenInterval);
+                const regenAmount = Math.min(10 * cycles, this.maxPollen - this.pollen);
+                this.pollen += regenAmount;
+                this.lastRegen = now - (elapsed % this.regenInterval); // Keep remainder for accuracy
             }
         }
     }
