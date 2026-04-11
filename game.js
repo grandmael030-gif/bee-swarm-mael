@@ -1350,7 +1350,7 @@ class Game {
             convert: 10000,
             luck: 2500,
             flowers: 5000,
-            regen: 8000,
+            regen: 2000,  // Reduced from 8000 to 2000
             bubble: 2000
         };
         // Cost increases by 2x each level (Cookie Clicker style)
