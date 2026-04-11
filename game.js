@@ -511,6 +511,8 @@ class Bee {
             // Larger collection range for teleporting bees (they move too fast)
             const collectionRange = this.teleport ? 50 : 20;
             
+            if (dist === 0) dist = 0.1; // Prevent division by zero
+            
             if (dist < collectionRange && this.target.pollen > 0) {
                 const collected = Math.min(1, this.target.pollen);
                 this.carrying += collected;
@@ -550,13 +552,23 @@ class Bee {
             }
         }
         
-        // Random movement (only if not teleporting)
-        if (!this.teleport) {
+        // If no target, wander around randomly (don't freeze)
+        if (!this.target && this.carrying < this.capacity) {
+            this.vx += (Math.random() - 0.5) * 0.5;
+            this.vy += (Math.random() - 0.5) * 0.5;
+            // Limit wandering speed
+            const maxWanderSpeed = 2;
+            this.vx = Math.max(-maxWanderSpeed, Math.min(maxWanderSpeed, this.vx));
+            this.vy = Math.max(-maxWanderSpeed, Math.min(maxWanderSpeed, this.vy));
+        }
+        
+        // Random movement (only if not teleporting and has target)
+        if (!this.teleport && this.target) {
             this.vx += (Math.random() - 0.5) * 0.5;
             this.vy += (Math.random() - 0.5) * 0.5;
         }
         
-        // Update position (only if not handled by teleport)
+        // Update position (always update, even without target)
         if (!this.teleport || !this.target || this.carrying >= this.capacity) {
             this.x += this.vx;
             this.y += this.vy;
