@@ -332,6 +332,7 @@ class Auth {
         
         // Store current user
         this.currentUser = username;
+        localStorage.setItem('beeSwarm_currentUser', username);
         
         // Save credentials for auto-login
         localStorage.setItem('beeSwarm_username', username);
@@ -973,9 +974,15 @@ class Game {
             }
         }, { passive: false });
         
-        // Prevent double click zoom
+        // Prevent double click zoom (but allow fast clicks on game buttons)
         let lastClickTime = 0;
         document.addEventListener('click', (e) => {
+            // Skip if clicking on game buttons (allow spam clicking)
+            const target = e.target;
+            if (target.tagName === 'BUTTON' || target.closest('button')) {
+                return; // Don't block clicks on buttons
+            }
+            
             const now = Date.now();
             if (now - lastClickTime <= 300) {
                 // Double click detected, prevent zoom
@@ -1117,7 +1124,8 @@ class Game {
         this.applyUpgrades();
         
         // Load saved game data (or create first bee if no save)
-        const saved = localStorage.getItem('beeSwarm_game');
+        const saveKey = this.getSaveKey();
+        const saved = localStorage.getItem(saveKey);
         if (saved) {
             this.loadGame();
         } else {
@@ -1180,7 +1188,7 @@ class Game {
     
     convertPollen() {
         if (this.pollen > 0) {
-            const honeyMade = Math.floor(this.pollen / 10);
+            const honeyMade = Math.floor(this.pollen / 2);
             this.honey += honeyMade;
             this.pollen = 0;
             this.updateUI();
@@ -1666,7 +1674,7 @@ class Game {
             const convertInterval = Math.max(1, 60 - (this.upgrades.convert * 5)); // frames between conversions
             if (this.frameCount % convertInterval === 0) {
                 const convertAmount = Math.min(this.pollen, this.upgrades.convert * 10); // Convert more per level
-                const honeyMade = Math.floor(convertAmount / 10);
+                const honeyMade = Math.floor(convertAmount / 2);
                 if (honeyMade > 0) {
                     this.honey += honeyMade;
                     this.pollen -= convertAmount;
@@ -1814,4 +1822,5 @@ class Game {
 
 // Start
 const auth = new Auth();
+window.auth = auth; // Pour que le bouton déco fonctionne
 const game = new Game();
