@@ -1296,6 +1296,10 @@ class Game {
         // Apply loaded upgrades
         this.applyUpgrades();
         
+        // Initialize zone tracking for Misty's quest (BEFORE game loop starts)
+        this.visitedZones = new Set();
+        this.visitedFlowers = new Set();
+        
         // Load saved game data (or create first bee if no save)
         const saveKey = this.getSaveKey();
         const saved = localStorage.getItem(saveKey);
@@ -1314,10 +1318,6 @@ class Game {
         
         // Save before page unload
         window.addEventListener('beforeunload', () => this.saveGame());
-        
-        // Initialize zone tracking for Misty's quest
-        this.visitedZones = new Set();
-        this.visitedFlowers = new Set();
     }
     
     trackZoneVisit() {
