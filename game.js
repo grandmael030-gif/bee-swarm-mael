@@ -468,7 +468,6 @@ class Bee {
         this.color = this.getColor();
         this.angle = 0;
         this.teleport = false; // Teleport mode for high speed levels
-        this.nextTarget = null; // Pre-planned next flower target
     }
     
     getColor() {
@@ -492,12 +491,6 @@ class Bee {
             if (dist < 3000) {
                 game.addPollen(this.carrying);
                 this.carrying = 0;
-                // After depositing, use pre-planned next target if available
-                if (this.nextTarget && this.nextTarget.pollen > 0 && !this.nextTarget.targetedBy) {
-                    this.target = this.nextTarget;
-                    this.target.targetedBy = this;
-                    this.nextTarget = null;
-                }
             } else {
                 this.vx = (dx / dist) * this.speed;
                 this.vy = (dy / dist) * this.speed;
@@ -507,21 +500,10 @@ class Bee {
             if (this.target && this.target.targetedBy === this) {
                 this.target.targetedBy = null;
             }
-            
-            // Use pre-planned next target if available and valid
-            if (this.nextTarget && this.nextTarget.pollen > 0 && !this.nextTarget.targetedBy) {
-                this.target = this.nextTarget;
-                this.target.targetedBy = this;
-                this.nextTarget = null;
-                // Smooth transition to new target
-                this.vx *= 0.3;
-                this.vy *= 0.3;
-            } else {
-                // Add cooldown to prevent infinite loops when searching for flowers
-                if (!this.lastFlowerSearch || Date.now() - this.lastFlowerSearch > 50) {
-                    this.lastFlowerSearch = Date.now();
-                    this.findNearestFlower();
-                }
+            // Add cooldown to prevent infinite loops when searching for flowers
+            if (!this.lastFlowerSearch || Date.now() - this.lastFlowerSearch > 50) {
+                this.lastFlowerSearch = Date.now();
+                this.findNearestFlower();
             }
         }
         
@@ -556,43 +538,23 @@ class Bee {
                     }
                 }
                 
-                // PREVIEW: Look for next flower before current one is empty or bee is full
-                const flowerAlmostEmpty = this.target.pollen <= 3;
-                const beeAlmostFull = this.carrying >= this.capacity * 0.9;
-                
-                if ((flowerAlmostEmpty || beeAlmostFull) && this.carrying < this.capacity) {
-                    if (!this.nextTarget || this.nextTarget.pollen <= 0 || this.nextTarget === this.target) {
-                        if (!this.lastFlowerSearch || Date.now() - this.lastFlowerSearch > 100) {
-                            this.lastFlowerSearch = Date.now();
-                            // Store current target, find next one
-                            const currentTarget = this.target;
-                            this.target.targetedBy = null; // Release current temporarily
-                            this.findNearestFlower();
-                            this.nextTarget = this.target;
-                            // Restore current target
-                            this.target = currentTarget;
-                            this.target.targetedBy = this;
-                        }
-                    }
-                }
-                
-                // For fast bees, immediately find next flower to maximize efficiency
+                // For fast bees, wait before finding next flower (longer cooldown = smoother)
                 if (this.teleport && this.carrying < this.capacity) {
-                    if (!this.lastFlowerSearch || Date.now() - this.lastFlowerSearch > 50) {
+                    if (!this.lastFlowerSearch || Date.now() - this.lastFlowerSearch > 200) {
                         this.lastFlowerSearch = Date.now();
                         this.findNearestFlower();
                     }
                 }
             } else if (this.teleport && dist > collectionRange) {
-                // Teleport mode: instantly move closer to target (but not too close to avoid skipping)
-                const teleportDist = Math.min(dist * 0.6, this.speed);
+                // Teleport mode: smaller steps, more velocity smoothing
+                const teleportDist = Math.min(dist * 0.4, this.speed * 0.8);
                 this.x += (dx / dist) * teleportDist;
                 this.y += (dy / dist) * teleportDist;
-                // Smooth velocity after teleport (blend with current velocity)
-                const newVx = (dx / dist) * this.speed * 0.3;
-                const newVy = (dy / dist) * this.speed * 0.3;
-                this.vx = this.vx * 0.5 + newVx * 0.5;
-                this.vy = this.vy * 0.5 + newVy * 0.5;
+                // Strong velocity smoothing to avoid "spring" effect
+                const newVx = (dx / dist) * this.speed * 0.2;
+                const newVy = (dy / dist) * this.speed * 0.2;
+                this.vx = this.vx * 0.3 + newVx * 0.7;
+                this.vy = this.vy * 0.3 + newVy * 0.7;
                 
                 // Check if we landed close enough to collect after teleport
                 const newDist = Math.sqrt(Math.pow(this.target.x - this.x, 2) + Math.pow(this.target.y - this.y, 2));
@@ -616,12 +578,12 @@ class Bee {
                     }
                 }
             } else {
-                // Smooth velocity change to avoid "spring" effect when switching flowers
+                // Very smooth velocity change to avoid "spring" effect
                 const targetVx = (dx / dist) * this.speed;
                 const targetVy = (dy / dist) * this.speed;
-                // Lerp towards target velocity (0.2 = smooth transition)
-                this.vx += (targetVx - this.vx) * 0.2;
-                this.vy += (targetVy - this.vy) * 0.2;
+                // Slower lerp = smoother transition (0.1 instead of 0.2)
+                this.vx += (targetVx - this.vx) * 0.1;
+                this.vy += (targetVy - this.vy) * 0.1;
             }
         }
         
@@ -661,9 +623,6 @@ class Bee {
     }
     
     findNearestFlower() {
-        // Store previous target for smooth transition
-        const prevTarget = this.target;
-        
         // Find nearest flower with pollen that isn't already targeted by another bee
         let nearest = null;
         let minDist = Infinity;
@@ -675,19 +634,17 @@ class Bee {
         const maxY = game.maxY || (game.height - 30);
         
         // Max search distance - don't search too far (optimization)
-        const maxSearchDist = 500; // Only search flowers within 500px
+        const maxSearchDist = 500;
         
-        // Sample flowers instead of checking all (optimization for many flowers)
-        const sampleSize = Math.min(game.flowers.length, 100); // Check max 100 flowers
+        // Sample flowers instead of checking all
+        const sampleSize = Math.min(game.flowers.length, 100);
         const step = Math.max(1, Math.floor(game.flowers.length / sampleSize));
         
         for (let i = 0; i < game.flowers.length; i += step) {
             const flower = game.flowers[i];
-            // Quick distance check first (faster than full boundary check)
             const quickDist = Math.abs(flower.x - this.x) + Math.abs(flower.y - this.y);
-            if (quickDist > maxSearchDist * 2) continue; // Skip far flowers
+            if (quickDist > maxSearchDist * 2) continue;
             
-            // Only consider flowers within boundaries that have pollen and aren't targeted
             if (flower.pollen > 0 && 
                 flower.x >= minX && flower.x <= maxX &&
                 flower.y >= minY && flower.y <= maxY &&
@@ -705,16 +662,10 @@ class Bee {
             nearest.targetedBy = this;
         }
         
-        // Check if target changed
-        if (nearest && nearest !== prevTarget) {
-            // Target changed - smooth velocity transition
-            this.vx *= 0.3;
-            this.vy *= 0.3;
-        }
-        
-        // If we found a new main target, clear the preview target
-        if (nearest && nearest !== this.nextTarget) {
-            this.nextTarget = null;
+        // Smooth transition when target changes
+        if (nearest && nearest !== this.target) {
+            this.vx *= 0.2;
+            this.vy *= 0.2;
         }
         
         this.target = nearest;
