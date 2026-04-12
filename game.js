@@ -1442,6 +1442,37 @@ class Game {
         bee.capacity = baseCapacity * capacityMultiplier;
         
         this.bees.push(bee);
+        
+        // Track quest progress for obtaining bees
+        if (this.bearSystem && save) { // Only track when actually obtaining (not loading)
+            console.log(`🐝 spawnBee: type=${type}, tracking for quests`);
+            
+            // Track generic bee obtained
+            this.bearSystem.updateQuestProgress('obtain_bee', 1);
+            
+            // Track specific rarity for quests that require rare/epic/legendary bees
+            const rarityMap = {
+                'red': 'rare',
+                'blue': 'epic',
+                'legendary': 'legendary'
+            };
+            
+            // If it's a rare+ bee, also update for lower rarity requirements
+            if (type === 'legendary') {
+                // Legendary counts for epic and rare too
+                this.bearSystem.updateQuestProgress('obtain_bee_rare', 1);
+                this.bearSystem.updateQuestProgress('obtain_bee_epic', 1);
+                this.bearSystem.updateQuestProgress('obtain_bee_legendary', 1);
+            } else if (type === 'blue') {
+                // Epic counts for rare too
+                this.bearSystem.updateQuestProgress('obtain_bee_rare', 1);
+                this.bearSystem.updateQuestProgress('obtain_bee_epic', 1);
+            } else if (type === 'red') {
+                // Red only counts for rare
+                this.bearSystem.updateQuestProgress('obtain_bee_rare', 1);
+            }
+        }
+        
         this.updateUI();
         
         // Save game after spawning (unless loading)
@@ -1588,7 +1619,7 @@ class Game {
                                     <div class="quest-objectives">
                                         ${quest.objectives.map(obj => `
                                             <div class="objective">
-                                                <span>${obj.type === 'collect_pollen' ? '🌸' : obj.type === 'collect_honey' ? '🍯' : obj.type === 'buy_bees' ? '🐝' : '⭐'} ${obj.description}</span>
+                                                <span>${obj.type === 'collect_pollen' ? '🌸' : obj.type === 'collect_honey' ? '🍯' : obj.type === 'buy_bees' ? '🐝' : obj.type?.startsWith('obtain_bee') ? '🐝' : '⭐'} ${obj.description}</span>
                                                 <span class="progress">${isPast ? obj.target + '/' + obj.target : (progress.questProgress[obj.type] || 0) + '/' + obj.target}</span>
                                             </div>
                                         `).join('')}

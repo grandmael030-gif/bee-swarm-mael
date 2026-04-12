@@ -126,7 +126,7 @@ const BEARS_DATA = {
                 dialogueStart: 'Les abeilles nocturnes sont rares... Obtiens une abeille Rouge ou meilleure (Bleue ou Légendaire) !',
                 dialogueComplete: 'Elle brille comme les étoiles !',
                 objectives: [
-                    { type: 'obtain_bee', target: 1, beeRarity: 'rare', description: 'Obtenir 1 abeille Rouge ou mieux' }
+                    { type: 'obtain_bee_rare', target: 1, description: 'Obtenir 1 abeille Rouge ou mieux' }
                 ],
                 rewards: { honey: 800, xp: 50, bee: 'rare' }
             },
@@ -213,7 +213,7 @@ const BEARS_DATA = {
                 dialogueStart: 'Il te faut une abeille qui VOLE ! Obtiens une abeille Bleue !',
                 dialogueComplete: 'ELLE DÉCHIRE ! Regarde-moi cette beauté !',
                 objectives: [
-                    { type: 'obtain_bee', target: 1, beeRarity: 'epic', description: 'Obtenir 1 abeille Bleue' }
+                    { type: 'obtain_bee_epic', target: 1, description: 'Obtenir 1 abeille Bleue' }
                 ],
                 rewards: { honey: 1500, xp: 65, bee: 'epic' }
             },
@@ -278,7 +278,7 @@ const BEARS_DATA = {
                 dialogueStart: 'Une légende dort dans la brume... Obtiens une abeille LÉGENDAIRE (dorée) !',
                 dialogueComplete: 'Elle est VRAIE ! La légende est vraie !',
                 objectives: [
-                    { type: 'obtain_bee', target: 1, beeRarity: 'legendary', description: 'Obtenir 1 abeille Légendaire (dorée)' }
+                    { type: 'obtain_bee_legendary', target: 1, description: 'Obtenir 1 abeille Légendaire (dorée)' }
                 ],
                 rewards: { honey: 2000, xp: 100, bee: 'legendary' }
             },
