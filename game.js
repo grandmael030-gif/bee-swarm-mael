@@ -1615,7 +1615,7 @@ class Game {
                                         ${quest.objectives.map(obj => `
                                             <div class="objective">
                                                 <span>${obj.type === 'collect_pollen' ? '🌸' : obj.type === 'collect_honey' ? '🍯' : obj.type === 'buy_bees' ? '🐝' : obj.type?.startsWith('obtain_bee') ? '🐝' : '⭐'} ${obj.description}</span>
-                                                <span class="progress">${isPast ? obj.target + '/' + obj.target : (progress.questProgress[obj.type] || 0) + '/' + obj.target}</span>
+                                                <span class="progress">${isPast ? obj.target + '/' + obj.target : Math.min(progress.questProgress[obj.type] || 0, obj.target) + '/' + obj.target}</span>
                                             </div>
                                         `).join('')}
                                     </div>
@@ -1650,14 +1650,17 @@ class Game {
                 this.spawnBee(result.rewards.bee);
             }
             
-            // Save and refresh display
+            // Save and refresh display IMMEDIATELY
             this.saveGame();
             
             // Initialize baselines for the new quest (if it's an upgrade quest)
             this.bearSystem.initUpgradeBaselines(bearId, this.upgrades);
             
-            this.displayBears();
-            this.updateUI();
+            // Force immediate UI refresh with animation frame for smooth update
+            requestAnimationFrame(() => {
+                this.displayBears();
+                this.updateUI();
+            });
             
             // Notification dans la console au lieu d'alert bloquante
             console.log(`✅ QUÊTE COMPLÉTÉE: ${result.bearName} - "${result.questName}"`);
