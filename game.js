@@ -512,8 +512,8 @@ class Bee {
             const dy = this.target.y - this.y;
             let dist = Math.sqrt(dx * dx + dy * dy);
             
-            // Collection range for collecting pollen
-            const collectionRange = 20;
+            // Larger collection range for teleporting bees (they move too fast)
+            const collectionRange = this.teleport ? 50 : 20;
             
             if (dist === 0) dist = 0.1; // Prevent division by zero
             
@@ -538,6 +538,43 @@ class Bee {
                     }
                 }
                 
+                // For fast bees, immediately find next flower
+                if (this.teleport && this.carrying < this.capacity) {
+                    if (!this.lastFlowerSearch || Date.now() - this.lastFlowerSearch > 100) {
+                        this.lastFlowerSearch = Date.now();
+                        this.findNearestFlower();
+                    }
+                }
+            } else if (this.teleport && dist > collectionRange) {
+                // Teleport mode: instantly move closer to target
+                const teleportDist = Math.min(dist * 0.5, this.speed * 0.8);
+                this.x += (dx / dist) * teleportDist;
+                this.y += (dy / dist) * teleportDist;
+                // Blend velocity for smoother movement
+                const newVx = (dx / dist) * this.speed * 0.3;
+                const newVy = (dy / dist) * this.speed * 0.3;
+                this.vx = this.vx * 0.4 + newVx * 0.6;
+                this.vy = this.vy * 0.4 + newVy * 0.6;
+                
+                // Check if close enough to collect after teleport
+                const newDist = Math.sqrt(Math.pow(this.target.x - this.x, 2) + Math.pow(this.target.y - this.y, 2));
+                if (newDist < collectionRange && this.target.pollen > 0 && this.carrying < this.capacity) {
+                    const collected = Math.min(1, this.target.pollen);
+                    this.carrying += collected;
+                    if (!game.infiniteFlowers) {
+                        this.target.pollen -= collected;
+                    }
+                    this.target.visited = true;
+                    
+                    if (game.bearSystem && this.target.id && !game.visitedFlowers?.has(this.target.id)) {
+                        game.visitedFlowers = game.visitedFlowers || new Set();
+                        game.visitedFlowers.add(this.target.id);
+                        game.bearSystem.updateQuestProgress('visit_flowers', 1);
+                        if (this.target.type === 'blue') {
+                            game.bearSystem.updateQuestProgress('collect_blue_pollen', 1);
+                        }
+                    }
+                }
             } else {
                 // Very smooth velocity change to avoid "spring" effect
                 const targetVx = (dx / dist) * this.speed;
@@ -558,15 +595,17 @@ class Bee {
             this.vy = Math.max(-maxWanderSpeed, Math.min(maxWanderSpeed, this.vy));
         }
         
-        // Random movement (when has target)
-        if (this.target) {
+        // Random movement (only if not teleporting and has target)
+        if (!this.teleport && this.target) {
             this.vx += (Math.random() - 0.5) * 0.5;
             this.vy += (Math.random() - 0.5) * 0.5;
         }
         
-        // Update position
-        this.x += this.vx;
-        this.y += this.vy;
+        // Update position (always update, even without target)
+        if (!this.teleport || !this.target || this.carrying >= this.capacity) {
+            this.x += this.vx;
+            this.y += this.vy;
+        }
         
         // Apply friction to smooth movement (prevents spring/bounce effect)
         this.vx *= 0.95;
@@ -1381,9 +1420,8 @@ class Game {
         const speedLevel = this.upgrades.speed;
         const speedMultiplier = Math.pow(2, Math.min(speedLevel, 6));
         const baseSpeed = bee.type === 'legendary' ? 4 : bee.type === 'blue' ? 3 : bee.type === 'red' ? 2.5 : 2;
-        // Cap max speed at 12 to prevent bouncing/spring effect at high levels
-        bee.speed = Math.min(baseSpeed * speedMultiplier, 12);
-        bee.teleport = false; // DISABLED - causes trampoline effect
+        bee.speed = baseSpeed * speedMultiplier;
+        bee.teleport = speedLevel >= 7; // Enable teleport at level 7+
         
         const capacityMultiplier = Math.pow(2, this.upgrades.capacity);
         const baseCapacity = bee.type === 'legendary' ? 100 : bee.type === 'blue' ? 50 : bee.type === 'red' ? 30 : 10;
@@ -1684,9 +1722,9 @@ class Game {
         
         const cost = this.getUpgradeCost(type);
         
-        // Level 7 message updated
+        // Enable teleport mode at level 7 (message only for info)
         if (type === 'speed' && currentLevel === 6) {
-            alert('⚡ Niveau 7 = Vitesse MAX !\nTes abeilles seront ultra rapides ! 🚀');
+            alert('⚡ Niveau 7 débloquera la TÉLÉPORTATION !\nLes abeilles iront à la vitesse de l\'éclair ! 🚀');
         }
         
         if (this.honey >= cost) {
@@ -1719,11 +1757,10 @@ class Game {
         
         this.bees.forEach(bee => {
             const baseSpeed = bee.type === 'legendary' ? 4 : bee.type === 'blue' ? 3 : bee.type === 'red' ? 2.5 : 2;
-            // Cap max speed at 12 to prevent bouncing/spring effect
-            bee.speed = Math.min(baseSpeed * speedMultiplier, 12);
+            bee.speed = baseSpeed * speedMultiplier;
             
-            // Teleport mode DISABLED - causes trampoline effect
-            bee.teleport = false;
+            // Enable teleport mode at level 7+ to prevent syncope
+            bee.teleport = speedLevel >= 7;
         });
         
         // Apply capacity upgrade: x2 per level
