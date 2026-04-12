@@ -1546,7 +1546,6 @@ class Game {
         
         Object.values(this.bearSystem.bears).forEach(bear => {
             const progress = this.bearSystem.getQuestProgress(bear.id);
-            const currentQuest = bear.quests[progress.currentQuestIndex];
             const isCompleted = progress.currentQuestIndex >= bear.quests.length;
             
             // Avatar emoji selon le bear
@@ -1557,7 +1556,7 @@ class Game {
             const avatar = avatars[bear.id] || '🐻';
             
             html += `
-                <div class="bear-card ${isCompleted ? 'completed' : ''}">
+                <div class="bear-card">
                     <div class="bear-header">
                         <span class="bear-avatar" style="font-size: 40px; background: ${bear.appearance?.color || '#8B4513'}; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">${avatar}</span>
                         <div class="bear-info">
@@ -1572,29 +1571,37 @@ class Game {
                             ✅ Toutes les quêtes complétées !
                         </div>
                     ` : `
-                        <div class="current-quest">
-                            <h4>📜 Quête actuelle: ${currentQuest.name}</h4>
-                            <p>${currentQuest.description}</p>
-                            <div class="quest-objectives">
-                                ${currentQuest.objectives.map(obj => `
-                                    <div class="objective">
-                                        <span>${obj.type === 'collect_pollen' ? '🌸' : obj.type === 'collect_honey' ? '🍯' : obj.type === 'buy_bees' ? '🐝' : '⭐'} ${obj.description}</span>
-                                        <span class="progress">${progress.questProgress[obj.type] || 0}/${obj.target}</span>
+                    <div class="all-quests">
+                        ${bear.quests.map((quest, index) => {
+                            const isCurrent = index === progress.currentQuestIndex;
+                            const isPast = index < progress.currentQuestIndex;
+                            const isFuture = index > progress.currentQuestIndex;
+                            
+                            if (isFuture) {
+                                return `<div class="quest-future">🔒 Quête ${index + 1}: ??? (Bloquée)</div>`;
+                            }
+                            
+                            return `
+                                <div class="quest-item ${isCurrent ? 'current' : ''} ${isPast ? 'completed' : ''}">
+                                    <h4>${isPast ? '✅' : isCurrent ? '📜' : '🔒'} Quête ${index + 1}: ${quest.name}</h4>
+                                    <p>${quest.description}</p>
+                                    <div class="quest-objectives">
+                                        ${quest.objectives.map(obj => `
+                                            <div class="objective">
+                                                <span>${obj.type === 'collect_pollen' ? '🌸' : obj.type === 'collect_honey' ? '🍯' : obj.type === 'buy_bees' ? '🐝' : '⭐'} ${obj.description}</span>
+                                                <span class="progress">${isPast ? obj.target + '/' + obj.target : (progress.questProgress[obj.type] || 0) + '/' + obj.target}</span>
+                                            </div>
+                                        `).join('')}
                                     </div>
-                                `).join('')}
-                            </div>
-                            <div class="quest-rewards">
-                                <strong>Récompenses:</strong>
-                                ${currentQuest.rewards.honey ? ` 🍯 ${currentQuest.rewards.honey}` : ''}
-                                ${currentQuest.rewards.pollen ? ` 🌸 ${currentQuest.rewards.pollen}` : ''}
-                                ${currentQuest.rewards.bee ? ` 🐝 ${currentQuest.rewards.bee}` : ''}
-                            </div>
-                            ${this.bearSystem.checkQuestCompletion(bear.id) ? `
-                                <button class="claim-reward-btn" onclick="game.completeBearQuest('${bear.id}')">
-                                    🎁 Récupérer la récompense !
-                                </button>
-                            ` : ''}
-                        </div>
+                                    ${isCurrent && this.bearSystem.checkQuestCompletion(bear.id) ? `
+                                        <button class="claim-reward-btn" onclick="game.completeBearQuest('${bear.id}')">
+                                            🎁 Récupérer la récompense !
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
                     `}
                 </div>
             `;

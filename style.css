@@ -1111,6 +1111,47 @@ body {
     transform: scale(0.98);
 }
 
+/* All quests display */
+.all-quests {
+    margin-top: 15px;
+}
+
+.quest-item {
+    background: #FFF8E1;
+    border: 2px solid #FFD700;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+}
+
+.quest-item.current {
+    background: #FFF3E0;
+    border-color: #FF9800;
+    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+}
+
+.quest-item.completed {
+    background: #E8F5E9;
+    border-color: #4CAF50;
+    opacity: 0.8;
+}
+
+.quest-item h4 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: #5D4037;
+}
+
+.quest-future {
+    background: #F5F5F5;
+    border: 2px dashed #BDBDBD;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+    color: #9E9E9E;
+    font-style: italic;
+}
+
 /* Close Settings Button */
 #closeSettings {
     background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
