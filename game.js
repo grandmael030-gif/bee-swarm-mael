@@ -623,6 +623,9 @@ class Bee {
     }
     
     findNearestFlower() {
+        // Store previous target for smooth transition
+        const prevTarget = this.target;
+        
         // Find nearest flower with pollen that isn't already targeted by another bee
         let nearest = null;
         let minDist = Infinity;
@@ -662,6 +665,13 @@ class Bee {
         // Claim this flower for this bee
         if (nearest && nearest.targetedBy !== this) {
             nearest.targetedBy = this;
+        }
+        
+        // Check if target changed
+        if (nearest && nearest !== prevTarget) {
+            // Target changed - smooth velocity transition
+            this.vx *= 0.3;
+            this.vy *= 0.3;
         }
         
         this.target = nearest;
