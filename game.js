@@ -1419,7 +1419,7 @@ class Game {
         const speedMultiplier = Math.pow(2, Math.min(speedLevel, 6));
         const baseSpeed = bee.type === 'legendary' ? 4 : bee.type === 'blue' ? 3 : bee.type === 'red' ? 2.5 : 2;
         bee.speed = baseSpeed * speedMultiplier;
-        bee.teleport = speedLevel >= 7;
+        bee.teleport = false; // DISABLED - causes trampoline effect
         
         const capacityMultiplier = Math.pow(2, this.upgrades.capacity);
         const baseCapacity = bee.type === 'legendary' ? 100 : bee.type === 'blue' ? 50 : bee.type === 'red' ? 30 : 10;
@@ -1720,9 +1720,9 @@ class Game {
         
         const cost = this.getUpgradeCost(type);
         
-        // Enable teleport mode at level 7 (message only for info)
+        // Level 7 message updated
         if (type === 'speed' && currentLevel === 6) {
-            alert('⚡ Niveau 7 débloquera la TÉLÉPORTATION !\nLes abeilles iront à la vitesse de l\'éclair ! 🚀');
+            alert('⚡ Niveau 7 = Vitesse MAX !\nTes abeilles seront ultra rapides ! 🚀');
         }
         
         if (this.honey >= cost) {
@@ -1757,8 +1757,8 @@ class Game {
             const baseSpeed = bee.type === 'legendary' ? 4 : bee.type === 'blue' ? 3 : bee.type === 'red' ? 2.5 : 2;
             bee.speed = baseSpeed * speedMultiplier;
             
-            // Enable teleport mode at level 7+ to prevent syncope
-            bee.teleport = speedLevel >= 7;
+            // Teleport mode DISABLED - causes trampoline effect
+            bee.teleport = false;
         });
         
         // Apply capacity upgrade: x2 per level
