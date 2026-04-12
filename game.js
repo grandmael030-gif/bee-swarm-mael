@@ -609,6 +609,10 @@ class Bee {
             this.y += this.vy;
         }
         
+        // Apply friction to smooth movement (prevents spring/bounce effect)
+        this.vx *= 0.95;
+        this.vy *= 0.95;
+        
         // Boundary check - strict screen limits
         if (game.minX !== undefined) {
             this.x = Math.max(game.minX, Math.min(game.maxX, this.x));
@@ -1418,7 +1422,8 @@ class Game {
         const speedLevel = this.upgrades.speed;
         const speedMultiplier = Math.pow(2, Math.min(speedLevel, 6));
         const baseSpeed = bee.type === 'legendary' ? 4 : bee.type === 'blue' ? 3 : bee.type === 'red' ? 2.5 : 2;
-        bee.speed = baseSpeed * speedMultiplier;
+        // Cap max speed at 12 to prevent bouncing/spring effect at high levels
+        bee.speed = Math.min(baseSpeed * speedMultiplier, 12);
         bee.teleport = false; // DISABLED - causes trampoline effect
         
         const capacityMultiplier = Math.pow(2, this.upgrades.capacity);
@@ -1755,7 +1760,8 @@ class Game {
         
         this.bees.forEach(bee => {
             const baseSpeed = bee.type === 'legendary' ? 4 : bee.type === 'blue' ? 3 : bee.type === 'red' ? 2.5 : 2;
-            bee.speed = baseSpeed * speedMultiplier;
+            // Cap max speed at 12 to prevent bouncing/spring effect
+            bee.speed = Math.min(baseSpeed * speedMultiplier, 12);
             
             // Teleport mode DISABLED - causes trampoline effect
             bee.teleport = false;
