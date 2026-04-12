@@ -1626,10 +1626,21 @@ class Game {
             
             // Save and refresh display
             this.saveGame();
+            
+            // Initialize baselines for the new quest (if it's an upgrade quest)
+            this.bearSystem.initUpgradeBaselines(bearId, this.upgrades);
+            
             this.displayBears();
             this.updateUI();
             
-            alert(`✅ ${result.bearName} : "${result.questName}" complétée !\n\nRécompenses reçues :\n${result.rewards.honey ? `🍯 ${result.rewards.honey} miel\n` : ''}${result.rewards.pollen ? `🌸 ${result.rewards.pollen} pollen\n` : ''}${result.rewards.bee ? `🐝 1 abeille ${result.rewards.bee}` : ''}`);
+            // Notification dans la console au lieu d'alert bloquante
+            console.log(`✅ QUÊTE COMPLÉTÉE: ${result.bearName} - "${result.questName}"`);
+            console.log(`🎁 Récompenses: ${result.rewards.honey || 0} miel, ${result.rewards.pollen || 0} pollen, ${result.rewards.bee || 'aucune'} abeille`);
+            
+            // Effet visuel: spawn de particules dorées
+            for (let i = 0; i < 20; i++) {
+                this.particles.push(new Particle(this.player.x, this.player.y, 'sparkle'));
+            }
         }
     }
     

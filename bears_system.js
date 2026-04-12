@@ -561,6 +561,20 @@ class BearSystem {
         progress.currentQuestIndex++;
         progress.questProgress = {};
         
+        // Initialiser les baselines pour la nouvelle quête si c'est une quête d'upgrade
+        const nextQuest = bear.quests[progress.currentQuestIndex];
+        if (nextQuest) {
+            for (const obj of nextQuest.objectives) {
+                if ((obj.type === 'buy_upgrade' || obj.type === 'upgrade_level') && obj.upgradeType) {
+                    // La baseline sera initialisée au prochain appel de initUpgradeBaselines
+                    // mais on s'assure que le questProgress existe
+                    if (!progress.questProgress) {
+                        progress.questProgress = {};
+                    }
+                }
+            }
+        }
+        
         // Débloquer le bear suivant si c'était la dernière quête
         if (progress.currentQuestIndex >= bear.quests.length) {
             progress.completed = true;
