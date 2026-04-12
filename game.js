@@ -627,14 +627,26 @@ class Bee {
         const maxX = game.maxX || (game.width - 30);
         const maxY = game.maxY || (game.height - 30);
         
-        for (const flower of game.flowers) {
+        // Max search distance - don't search too far (optimization)
+        const maxSearchDist = 500; // Only search flowers within 500px
+        
+        // Sample flowers instead of checking all (optimization for many flowers)
+        const sampleSize = Math.min(game.flowers.length, 100); // Check max 100 flowers
+        const step = Math.max(1, Math.floor(game.flowers.length / sampleSize));
+        
+        for (let i = 0; i < game.flowers.length; i += step) {
+            const flower = game.flowers[i];
+            // Quick distance check first (faster than full boundary check)
+            const quickDist = Math.abs(flower.x - this.x) + Math.abs(flower.y - this.y);
+            if (quickDist > maxSearchDist * 2) continue; // Skip far flowers
+            
             // Only consider flowers within boundaries that have pollen and aren't targeted
             if (flower.pollen > 0 && 
                 flower.x >= minX && flower.x <= maxX &&
                 flower.y >= minY && flower.y <= maxY &&
-                (!flower.targetedBy || flower.targetedBy === this)) { // Only untargeted flowers or already targeted by this bee
+                (!flower.targetedBy || flower.targetedBy === this)) {
                 const d = Math.hypot(flower.x - this.x, flower.y - this.y);
-                if (d < minDist) {
+                if (d < minDist && d < maxSearchDist) {
                     minDist = d;
                     nearest = flower;
                 }
