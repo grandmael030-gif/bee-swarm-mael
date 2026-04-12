@@ -811,6 +811,9 @@ class Game {
         this.player = { x: this.width/2, y: this.height/2 };
         
         this.keys = {};
+        
+        // Bee limit - can be increased with upgrades
+        this.maxBees = 100;
         this.mouse = { x: 0, y: 0, down: false };
         
         // Load upgrades
@@ -819,6 +822,7 @@ class Game {
         
         // Load rebirth data
         this.loadRebirthData();
+        this.updateMaxBees(); // Calculate bee limit based on rebirths
         
         // Initialize Bear System (Quests)
         try {
@@ -1002,6 +1006,12 @@ class Game {
         }
     }
     
+    updateMaxBees() {
+        // Base: 100 bees, +50 per rebirth
+        this.maxBees = 100 + (this.rebirthCount * 50);
+        console.log(`🐝 Max bees: ${this.maxBees} (base 100 + ${this.rebirthCount} renaissances × 50)`);
+    }
+    
     saveRebirthData() {
         localStorage.setItem('beeSwarm_rebirth', JSON.stringify({
             count: this.rebirthCount,
@@ -1050,6 +1060,7 @@ class Game {
         
         // Save rebirth data
         this.saveRebirthData();
+        this.updateMaxBees(); // Update bee limit with new rebirth count
         
         // Respawn one basic bee
         this.spawnBee('basic');
@@ -1380,9 +1391,8 @@ class Game {
     
     spawnBee(type, save = true) {
         // Limit max bees to prevent browser freeze
-        const MAX_BEES = 100;
-        if (this.bees.length >= MAX_BEES) {
-            alert('Limite atteinte : ' + MAX_BEES + ' abeilles maximum !');
+        if (this.bees.length >= this.maxBees) {
+            alert('Limite atteinte : ' + this.maxBees + ' abeilles maximum !');
             return;
         }
         
@@ -1828,12 +1838,10 @@ class Game {
     }
     
     buyBee(type, cost) {
-        const MAX_BEES = 100;
-        
         // If at max bees, exchange the worst bee for a better one
-        if (this.bees.length >= MAX_BEES) {
+        if (this.bees.length >= this.maxBees) {
             if (type === 'basic') {
-                alert('Limite atteinte : ' + MAX_BEES + ' abeilles maximum !');
+                alert('Limite atteinte : ' + this.maxBees + ' abeilles maximum !');
                 this.closeShop();
                 return;
             }
@@ -1877,7 +1885,7 @@ class Game {
                 alert(`🔄 Échange effectué !\n1 Abeille ${exchangedType} → 1 Abeille ${newTypeName}\n💰 -${cost} miel`);
                 return;
             } else {
-                alert('❌ Limite atteinte (100 abeilles) et pas d\'abeille à échanger !\nTu as déjà que des abeilles de haut niveau.');
+                alert('❌ Limite atteinte (' + this.maxBees + ' abeilles) et pas d\'abeille à échanger !\nTu as déjà que des abeilles de haut niveau.');
                 this.closeShop();
                 return;
             }
@@ -1894,11 +1902,9 @@ class Game {
     }
     
     buyMaxBees(type, cost) {
-        const MAX_BEES = 100;
-        
         // Calculate how many we can buy
         const currentBees = this.bees.length;
-        const availableSlots = MAX_BEES - currentBees;
+        const availableSlots = this.maxBees - currentBees;
         
         if (availableSlots <= 0) {
             // At max bees - check if we can exchange
@@ -1962,7 +1968,7 @@ class Game {
                     alert('❌ Pas d\'abeilles à échanger ou pas assez de miel !');
                 }
             } else {
-                alert('Limite atteinte : ' + MAX_BEES + ' abeilles maximum !');
+                alert('Limite atteinte : ' + this.maxBees + ' abeilles maximum !');
             }
             return;
         }
