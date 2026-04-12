@@ -123,10 +123,10 @@ const BEARS_DATA = {
                 id: 'luna_3',
                 name: 'Abeilles de Minuit',
                 description: 'Obtiens une abeille spéciale',
-                dialogueStart: 'Les abeilles nocturnes sont rares... Obtiens une abeille Rare ou meilleure.',
+                dialogueStart: 'Les abeilles nocturnes sont rares... Obtiens une abeille Rouge ou meilleure (Bleue ou Légendaire) !',
                 dialogueComplete: 'Elle brille comme les étoiles !',
                 objectives: [
-                    { type: 'obtain_bee', target: 1, beeRarity: 'rare', description: 'Obtenir 1 abeille Rare ou mieux' }
+                    { type: 'obtain_bee', target: 1, beeRarity: 'rare', description: 'Obtenir 1 abeille Rouge ou mieux' }
                 ],
                 rewards: { honey: 800, xp: 50, bee: 'rare' }
             },
@@ -210,10 +210,10 @@ const BEARS_DATA = {
                 id: 'rusty_4',
                 name: 'Abeille Turbo',
                 description: 'Obtenir une abeille rapide',
-                dialogueStart: 'Il te faut une abeille qui VOLE ! Obtiens une abeille Epic !',
+                dialogueStart: 'Il te faut une abeille qui VOLE ! Obtiens une abeille Bleue !',
                 dialogueComplete: 'ELLE DÉCHIRE ! Regarde-moi cette beauté !',
                 objectives: [
-                    { type: 'obtain_bee', target: 1, beeRarity: 'epic', description: 'Obtenir 1 abeille Epic' }
+                    { type: 'obtain_bee', target: 1, beeRarity: 'epic', description: 'Obtenir 1 abeille Bleue' }
                 ],
                 rewards: { honey: 1500, xp: 65, bee: 'epic' }
             },
@@ -275,10 +275,10 @@ const BEARS_DATA = {
                 id: 'misty_3',
                 name: 'Abeille Légendaire ?',
                 description: 'Tente ta chance',
-                dialogueStart: 'Une légende dort dans la brume... Obtiens une abeille Legendary.',
+                dialogueStart: 'Une légende dort dans la brume... Obtiens une abeille LÉGENDAIRE (dorée) !',
                 dialogueComplete: 'Elle est VRAIE ! La légende est vraie !',
                 objectives: [
-                    { type: 'obtain_bee', target: 1, beeRarity: 'legendary', description: 'Obtenir 1 abeille Legendary' }
+                    { type: 'obtain_bee', target: 1, beeRarity: 'legendary', description: 'Obtenir 1 abeille Légendaire (dorée)' }
                 ],
                 rewards: { honey: 2000, xp: 100, bee: 'legendary' }
             },
