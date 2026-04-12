@@ -1026,6 +1026,7 @@ class Game {
             return;
         }
         
+        const newMaxBees = 100 + ((this.rebirthCount + 1) * 50);
         const confirmMsg = `✨ Es-tu sûr de vouloir effectuer une Renaissance ?\n\n` +
             `Tu vas PERDRE:\n` +
             `• ${this.honey.toLocaleString()} miel 🍯\n` +
@@ -1035,6 +1036,7 @@ class Game {
             `TU GAGNES:\n` +
             `• +1 Point de Renaissance (${this.rebirthCount + 1} total)\n` +
             `• +10% bonus permanent sur tout le pollen collecté\n` +
+            `• Limite d'abeilles: ${this.maxBees} → ${newMaxBees} (+50) 🐝\n` +
             `• Nouveau départ avec bonus x${(this.rebirthMultiplier + 0.1).toFixed(1)}`;
         
         if (!confirm(confirmMsg)) return;
@@ -1071,7 +1073,8 @@ class Game {
         
         alert(`✨ Renaissance complète !\n\n` +
             `Tu as maintenant ${this.rebirthCount} points de Renaissance !\n` +
-            `Bonus pollen: x${this.rebirthMultiplier.toFixed(1)}\n\n` +
+            `Bonus pollen: x${this.rebirthMultiplier.toFixed(1)}\n` +
+            `Limite d'abeilles: ${this.maxBees} (+50 par renaissance) 🐝\n\n` +
             `Bon courage pour ta nouvelle aventure ! 🐝✨`);
     }
     
