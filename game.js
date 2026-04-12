@@ -468,6 +468,7 @@ class Bee {
         this.color = this.getColor();
         this.angle = 0;
         this.teleport = false; // Teleport mode for high speed levels
+        this.nextTarget = null; // Pre-planned next flower target
     }
     
     getColor() {
@@ -491,6 +492,12 @@ class Bee {
             if (dist < 3000) {
                 game.addPollen(this.carrying);
                 this.carrying = 0;
+                // After depositing, use pre-planned next target if available
+                if (this.nextTarget && this.nextTarget.pollen > 0 && !this.nextTarget.targetedBy) {
+                    this.target = this.nextTarget;
+                    this.target.targetedBy = this;
+                    this.nextTarget = null;
+                }
             } else {
                 this.vx = (dx / dist) * this.speed;
                 this.vy = (dy / dist) * this.speed;
@@ -500,10 +507,21 @@ class Bee {
             if (this.target && this.target.targetedBy === this) {
                 this.target.targetedBy = null;
             }
-            // Add cooldown to prevent infinite loops when searching for flowers
-            if (!this.lastFlowerSearch || Date.now() - this.lastFlowerSearch > 50) {
-                this.lastFlowerSearch = Date.now();
-                this.findNearestFlower();
+            
+            // Use pre-planned next target if available and valid
+            if (this.nextTarget && this.nextTarget.pollen > 0 && !this.nextTarget.targetedBy) {
+                this.target = this.nextTarget;
+                this.target.targetedBy = this;
+                this.nextTarget = null;
+                // Smooth transition to new target
+                this.vx *= 0.3;
+                this.vy *= 0.3;
+            } else {
+                // Add cooldown to prevent infinite loops when searching for flowers
+                if (!this.lastFlowerSearch || Date.now() - this.lastFlowerSearch > 50) {
+                    this.lastFlowerSearch = Date.now();
+                    this.findNearestFlower();
+                }
             }
         }
         
@@ -535,6 +553,26 @@ class Bee {
                     // Track blue flowers specifically
                     if (this.target.type === 'blue') {
                         game.bearSystem.updateQuestProgress('collect_blue_pollen', 1);
+                    }
+                }
+                
+                // PREVIEW: Look for next flower before current one is empty or bee is full
+                const flowerAlmostEmpty = this.target.pollen <= 3;
+                const beeAlmostFull = this.carrying >= this.capacity * 0.9;
+                
+                if ((flowerAlmostEmpty || beeAlmostFull) && this.carrying < this.capacity) {
+                    if (!this.nextTarget || this.nextTarget.pollen <= 0 || this.nextTarget === this.target) {
+                        if (!this.lastFlowerSearch || Date.now() - this.lastFlowerSearch > 100) {
+                            this.lastFlowerSearch = Date.now();
+                            // Store current target, find next one
+                            const currentTarget = this.target;
+                            this.target.targetedBy = null; // Release current temporarily
+                            this.findNearestFlower();
+                            this.nextTarget = this.target;
+                            // Restore current target
+                            this.target = currentTarget;
+                            this.target.targetedBy = this;
+                        }
                     }
                 }
                 
@@ -672,6 +710,11 @@ class Bee {
             // Target changed - smooth velocity transition
             this.vx *= 0.3;
             this.vy *= 0.3;
+        }
+        
+        // If we found a new main target, clear the preview target
+        if (nearest && nearest !== this.nextTarget) {
+            this.nextTarget = null;
         }
         
         this.target = nearest;
