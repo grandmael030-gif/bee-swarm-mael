@@ -1444,18 +1444,13 @@ class Game {
         this.bees.push(bee);
         
         // Track quest progress for obtaining bees
-        if (this.bearSystem && save) { // Only track when actually obtaining (not loading)
+        // Note: save=false when loading or batch purchasing, but we still want to track
+        // We only skip tracking when loading (no bearSystem yet) or if explicitly loading
+        if (this.bearSystem && type !== 'basic') {
             console.log(`🐝 spawnBee: type=${type}, tracking for quests`);
             
             // Track generic bee obtained
             this.bearSystem.updateQuestProgress('obtain_bee', 1);
-            
-            // Track specific rarity for quests that require rare/epic/legendary bees
-            const rarityMap = {
-                'red': 'rare',
-                'blue': 'epic',
-                'legendary': 'legendary'
-            };
             
             // If it's a rare+ bee, also update for lower rarity requirements
             if (type === 'legendary') {
