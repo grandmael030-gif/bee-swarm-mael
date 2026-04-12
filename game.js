@@ -512,8 +512,8 @@ class Bee {
             const dy = this.target.y - this.y;
             let dist = Math.sqrt(dx * dx + dy * dy);
             
-            // Larger collection range for teleporting bees (they move too fast)
-            const collectionRange = this.teleport ? 50 : 20;
+            // Collection range for collecting pollen
+            const collectionRange = 20;
             
             if (dist === 0) dist = 0.1; // Prevent division by zero
             
@@ -538,45 +538,6 @@ class Bee {
                     }
                 }
                 
-                // For fast bees, wait before finding next flower (longer cooldown = smoother)
-                if (this.teleport && this.carrying < this.capacity) {
-                    if (!this.lastFlowerSearch || Date.now() - this.lastFlowerSearch > 200) {
-                        this.lastFlowerSearch = Date.now();
-                        this.findNearestFlower();
-                    }
-                }
-            } else if (this.teleport && dist > collectionRange) {
-                // Teleport mode: smaller steps, more velocity smoothing
-                const teleportDist = Math.min(dist * 0.4, this.speed * 0.8);
-                this.x += (dx / dist) * teleportDist;
-                this.y += (dy / dist) * teleportDist;
-                // Strong velocity smoothing to avoid "spring" effect
-                const newVx = (dx / dist) * this.speed * 0.2;
-                const newVy = (dy / dist) * this.speed * 0.2;
-                this.vx = this.vx * 0.3 + newVx * 0.7;
-                this.vy = this.vy * 0.3 + newVy * 0.7;
-                
-                // Check if we landed close enough to collect after teleport
-                const newDist = Math.sqrt(Math.pow(this.target.x - this.x, 2) + Math.pow(this.target.y - this.y, 2));
-                if (newDist < collectionRange && this.target.pollen > 0 && this.carrying < this.capacity) {
-                    const collected = Math.min(1, this.target.pollen);
-                    this.carrying += collected;
-                    // Only remove pollen if not in infinite flowers mode
-                    if (!game.infiniteFlowers) {
-                        this.target.pollen -= collected;
-                    }
-                    this.target.visited = true;
-                    
-                    // Track flower visit for quests
-                    if (game.bearSystem && this.target.id && !game.visitedFlowers?.has(this.target.id)) {
-                        game.visitedFlowers = game.visitedFlowers || new Set();
-                        game.visitedFlowers.add(this.target.id);
-                        game.bearSystem.updateQuestProgress('visit_flowers', 1);
-                        if (this.target.type === 'blue') {
-                            game.bearSystem.updateQuestProgress('collect_blue_pollen', 1);
-                        }
-                    }
-                }
             } else {
                 // Very smooth velocity change to avoid "spring" effect
                 const targetVx = (dx / dist) * this.speed;
@@ -597,17 +558,15 @@ class Bee {
             this.vy = Math.max(-maxWanderSpeed, Math.min(maxWanderSpeed, this.vy));
         }
         
-        // Random movement (only if not teleporting and has target)
-        if (!this.teleport && this.target) {
+        // Random movement (when has target)
+        if (this.target) {
             this.vx += (Math.random() - 0.5) * 0.5;
             this.vy += (Math.random() - 0.5) * 0.5;
         }
         
-        // Update position (always update, even without target)
-        if (!this.teleport || !this.target || this.carrying >= this.capacity) {
-            this.x += this.vx;
-            this.y += this.vy;
-        }
+        // Update position
+        this.x += this.vx;
+        this.y += this.vy;
         
         // Apply friction to smooth movement (prevents spring/bounce effect)
         this.vx *= 0.95;
