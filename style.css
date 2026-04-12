@@ -672,7 +672,7 @@ body {
 .upgrade-cost {
     font-size: 14px;
     font-weight: bold;
-    color: #FFD700;
+    color: #333;
     background: #fff8e1;
     padding: 4px 8px;
     border-radius: 6px;
