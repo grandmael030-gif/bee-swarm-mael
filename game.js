@@ -550,9 +550,11 @@ class Bee {
                 const teleportDist = Math.min(dist * 0.6, this.speed);
                 this.x += (dx / dist) * teleportDist;
                 this.y += (dy / dist) * teleportDist;
-                // Keep some velocity for smooth animation
-                this.vx = (dx / dist) * this.speed * 0.3;
-                this.vy = (dy / dist) * this.speed * 0.3;
+                // Smooth velocity after teleport (blend with current velocity)
+                const newVx = (dx / dist) * this.speed * 0.3;
+                const newVy = (dy / dist) * this.speed * 0.3;
+                this.vx = this.vx * 0.5 + newVx * 0.5;
+                this.vy = this.vy * 0.5 + newVy * 0.5;
                 
                 // Check if we landed close enough to collect after teleport
                 const newDist = Math.sqrt(Math.pow(this.target.x - this.x, 2) + Math.pow(this.target.y - this.y, 2));
@@ -576,8 +578,12 @@ class Bee {
                     }
                 }
             } else {
-                this.vx = (dx / dist) * this.speed;
-                this.vy = (dy / dist) * this.speed;
+                // Smooth velocity change to avoid "spring" effect when switching flowers
+                const targetVx = (dx / dist) * this.speed;
+                const targetVy = (dy / dist) * this.speed;
+                // Lerp towards target velocity (0.2 = smooth transition)
+                this.vx += (targetVx - this.vx) * 0.2;
+                this.vy += (targetVy - this.vy) * 0.2;
             }
         }
         
