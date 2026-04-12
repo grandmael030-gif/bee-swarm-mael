@@ -501,7 +501,7 @@ class Bee {
                 this.target.targetedBy = null;
             }
             // Add cooldown to prevent infinite loops when searching for flowers
-            if (!this.lastFlowerSearch || Date.now() - this.lastFlowerSearch > 100) {
+            if (!this.lastFlowerSearch || Date.now() - this.lastFlowerSearch > 50) {
                 this.lastFlowerSearch = Date.now();
                 this.findNearestFlower();
             }
@@ -510,7 +510,7 @@ class Bee {
         if (this.target && this.carrying < this.capacity) {
             const dx = this.target.x - this.x;
             const dy = this.target.y - this.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
+            let dist = Math.sqrt(dx * dx + dy * dy);
             
             // Larger collection range for teleporting bees (they move too fast)
             const collectionRange = this.teleport ? 50 : 20;
