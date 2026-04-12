@@ -416,6 +416,10 @@ class BearSystem {
                 completed: false
             };
         }
+        // Ensure questProgress exists (fix for corrupted/old save data)
+        if (!this.playerQuests[bearId].questProgress) {
+            this.playerQuests[bearId].questProgress = {};
+        }
         return this.playerQuests[bearId];
     }
     
@@ -510,6 +514,7 @@ class BearSystem {
     
     // Mettre à jour la progression
     updateProgress(type, amount) {
+        console.log(`🎯 Quest Update: ${type} +${amount}`);
         for (const bearId in this.playerQuests) {
             const progress = this.playerQuests[bearId];
             if (progress.unlocked && !progress.completed) {
@@ -519,7 +524,13 @@ class BearSystem {
                 if (quest) {
                     for (const obj of quest.objectives) {
                         if (obj.type === type) {
-                            progress.questProgress[type] = (progress.questProgress[type] || 0) + amount;
+                            // Ensure questProgress exists
+                            if (!progress.questProgress) {
+                                progress.questProgress = {};
+                            }
+                            const oldVal = progress.questProgress[type] || 0;
+                            progress.questProgress[type] = oldVal + amount;
+                            console.log(`✅ ${bearId}: ${type} ${oldVal} → ${progress.questProgress[type]}/${obj.target}`);
                         }
                     }
                 }

@@ -1450,23 +1450,6 @@ class Game {
         }
     }
     
-    addPollen(amount) {
-        // Apply rebirth multiplier bonus
-        const bonusAmount = Math.floor(amount * this.rebirthMultiplier);
-        this.pollen += bonusAmount;
-        this.updateUI();
-        
-        // Track quest progress for pollen collection (base amount, not multiplied)
-        if (this.bearSystem) {
-            this.bearSystem.updateQuestProgress('collect_pollen', amount);
-        }
-        
-        // Spawn particles
-        for (let i = 0; i < 3; i++) {
-            this.particles.push(new Particle(this.player.x, this.player.y, 'pollen'));
-        }
-    }
-    
     convertPollen() {
         if (this.pollen > 0) {
             const pollenBefore = this.pollen;
@@ -1498,6 +1481,23 @@ class Game {
             for (let i = 0; i < 8; i++) {
                 this.particles.push(new Particle(this.player.x, this.player.y, 'honey'));
             }
+        }
+    }
+    
+    addPollen(amount) {
+        // Apply rebirth multiplier bonus
+        const bonusAmount = Math.floor(amount * this.rebirthMultiplier);
+        this.pollen += bonusAmount;
+        
+        // Track quest progress for pollen collection (base amount, not multiplied)
+        console.log(`🌸 addPollen: ${amount} pollen, calling updateQuestProgress`);
+        if (this.bearSystem) {
+            this.bearSystem.updateQuestProgress('collect_pollen', amount);
+        }
+        
+        // Spawn particles
+        for (let i = 0; i < 3; i++) {
+            this.particles.push(new Particle(this.player.x, this.player.y, 'pollen'));
         }
     }
     
