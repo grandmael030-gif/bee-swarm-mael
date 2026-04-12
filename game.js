@@ -1774,7 +1774,7 @@ class Game {
                     costEl.textContent = '🏆 MAX';
                     costEl.classList.add('max-level');
                 } else {
-                    costEl.textContent = cost + ' 🍯';
+                    costEl.textContent = this.formatNumber(cost) + ' 🍯';
                     costEl.classList.remove('max-level');
                 }
             }
@@ -1802,6 +1802,11 @@ class Game {
     updateShopUI() {
         document.querySelectorAll('.shop-item').forEach(item => {
             const cost = parseInt(item.dataset.cost);
+            // Update displayed cost with formatted number
+            const costEl = item.querySelector('.cost');
+            if (costEl) {
+                costEl.textContent = this.formatNumber(cost) + ' 🍯';
+            }
             if (this.honey < cost) {
                 item.classList.add('disabled');
             } else {
@@ -1971,9 +1976,18 @@ class Game {
         }
     }
     
+    // Format large numbers with K/M/B/T suffixes
+    formatNumber(num) {
+        if (num >= 1e12) return (num / 1e12).toFixed(2) + 'T';
+        if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+        if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+        if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+        return num.toString();
+    }
+    
     updateUI() {
-        this.honeyEl.textContent = this.honey;
-        this.pollenEl.textContent = this.pollen;
+        this.honeyEl.textContent = this.formatNumber(this.honey);
+        this.pollenEl.textContent = this.formatNumber(this.pollen);
         this.beesEl.textContent = this.bees.length;
         
         // Update rebirth bonus display
