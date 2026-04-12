@@ -716,10 +716,24 @@ class Flower {
         this.pollen = this.maxPollen;
         this.visited = false;
         this.size = 15 + Math.random() * 10;
-        this.color = ['#FF69B4', '#FF1493', '#FF69B4', '#FF6347'][Math.floor(Math.random() * 4)];
+        
+        // Random flower type: 70% pink, 20% red, 10% blue
+        const rand = Math.random();
+        if (rand < 0.7) {
+            this.type = 'pink';
+            this.color = ['#FF69B4', '#FF1493', '#FF69B4', '#FF6347'][Math.floor(Math.random() * 4)];
+        } else if (rand < 0.9) {
+            this.type = 'red';
+            this.color = '#FF4444';
+        } else {
+            this.type = 'blue';
+            this.color = '#4444FF';
+        }
+        
         this.regenInterval = 5000; // Default 5 seconds in ms
         this.lastRegen = Date.now();
         this.targetedBy = null; // Track which bee is targeting this flower (1 bee per flower)
+        this.id = Math.random().toString(36).substr(2, 9); // Unique ID for tracking
     }
     
     update() {
