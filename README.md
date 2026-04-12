@@ -1,13 +1,3 @@
-# 🐝 Bee Swarm Simulator - Web Edition
-
-## Accès Privé
-
-**Email:** `grandmael030@mail.com`  
-**Mot de passe:** `bee2024`
-
-Seul cet email peut accéder au jeu !
-
----
 
 ## 🎮 Comment jouer (LOCAL - Immédiat)
 
