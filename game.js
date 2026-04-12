@@ -1441,7 +1441,16 @@ class Game {
     convertPollen() {
         if (this.pollen > 0) {
             const pollenBefore = this.pollen;
-            const honeyMade = Math.floor(this.pollen / 2);
+            
+            // Multiplier based on convert upgrade level: x2 at level 5, x3 at level 10
+            let multiplier = 0.5; // Default: divide by 2 (0.5x)
+            if (this.upgrades.convert >= 10) {
+                multiplier = 3; // Level 10: x3
+            } else if (this.upgrades.convert >= 5) {
+                multiplier = 2; // Level 5-9: x2
+            }
+            
+            const honeyMade = Math.floor(this.pollen * multiplier);
             this.honey += honeyMade;
             
             // Track quest progress for honey collection
@@ -2114,7 +2123,16 @@ class Game {
             const convertInterval = Math.max(1, 60 - (this.upgrades.convert * 5)); // frames between conversions
             if (this.frameCount % convertInterval === 0) {
                 const convertAmount = Math.min(this.pollen, this.upgrades.convert * 10); // Convert more per level
-                const honeyMade = Math.floor(convertAmount / 2);
+                
+                // Multiplier based on upgrade level: x2 at level 5, x3 at level 10
+                let multiplier = 0.5; // Default: divide by 2 (0.5x)
+                if (this.upgrades.convert >= 10) {
+                    multiplier = 3; // Level 10: x3
+                } else if (this.upgrades.convert >= 5) {
+                    multiplier = 2; // Level 5-9: x2
+                }
+                
+                const honeyMade = Math.floor(convertAmount * multiplier);
                 if (honeyMade > 0) {
                     this.honey += honeyMade;
                     this.pollen -= convertAmount;
