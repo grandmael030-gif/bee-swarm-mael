@@ -3,7 +3,17 @@
 
 // ==================== AUTHENTIFICATION ====================
 const ALLOWED_EMAILS = ['grandmael030@mail.com', 'grandmael030@gmail.com'];
-const PASSWORD_HASH = 'Mael04022012';
+// SHA-256 du mot de passe admin (le mot de passe en clair n'est jamais stocké dans le code).
+const PASSWORD_HASH = '25710c4f35a1af09409198bc3cfabab9f402800571c3b1121a376b6a90f7b9a2';
+
+// Hash SHA-256 d'une chaîne -> hexadécimal (nécessite un contexte sécurisé : https ou localhost).
+async function hashPassword(password) {
+    const data = new TextEncoder().encode(password);
+    const buffer = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(buffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+}
 
 class Auth {
     constructor() {
@@ -119,11 +129,11 @@ class Auth {
                 // Auto-fill email
                 this.emailInput.value = emailFromUrl;
                 
-                // Try auto-login if password is also in URL
+                // Try auto-login if password is also in URL (validated in autoLogin)
                 const passwordFromUrl = urlParams.get('pwd');
-                if (passwordFromUrl && passwordFromUrl === PASSWORD_HASH) {
+                if (passwordFromUrl) {
                     setTimeout(() => {
-                        this.autoLogin(emailFromUrl, PASSWORD_HASH);
+                        this.autoLogin(emailFromUrl, passwordFromUrl);
                     }, 100);
                     return true;
                 }
@@ -138,14 +148,11 @@ class Auth {
         const savedPassword = localStorage.getItem('beeSwarm_password');
         const rememberMe = localStorage.getItem('beeSwarm_remember') === 'true';
         
-        console.log('Checking saved login:', savedEmail, rememberMe);
-        
         if (savedEmail && savedPassword && rememberMe) {
             // Auto-fill saved credentials
             this.emailInput.value = savedEmail;
             this.passwordInput.value = savedPassword;
             
-            console.log('Auto-login with saved credentials');
             // Auto-login after short delay
             setTimeout(() => {
                 this.autoLogin(savedEmail, savedPassword);
@@ -155,8 +162,8 @@ class Auth {
         return false;
     }
     
-    autoLogin(email, password) {
-        if (this.validateCredentials(email, password)) {
+    async autoLogin(email, password) {
+        if (await this.validateCredentials(email, password)) {
             this.emailInput.value = email;
             this.passwordInput.value = password;
             this.loginError.textContent = '';
@@ -205,9 +212,10 @@ class Auth {
         }
     }
     
-    validateCredentials(email, password) {
-        const validEmails = ['grandmael030@mail.com', 'grandmael030@gmail.com'];
-        return validEmails.includes(email.toLowerCase()) && password === PASSWORD_HASH;
+    async validateCredentials(email, password) {
+        if (!ALLOWED_EMAILS.includes(email.toLowerCase())) return false;
+        const hash = await hashPassword(password);
+        return hash === PASSWORD_HASH;
     }
     
     playPublic() {
@@ -249,7 +257,6 @@ class Auth {
         const userRemember = localStorage.getItem('beeSwarm_userRemember') === 'true';
         
         if (savedUsername && savedUserPassword && userRemember) {
-            console.log('Auto-login user:', savedUsername);
             setTimeout(() => {
                 this.autoLoginUser(savedUsername, savedUserPassword);
             }, 100);
@@ -397,27 +404,18 @@ class Auth {
         this.loginScreen.classList.add('active');
     }
     
-    login() {
+    async login() {
         const email = this.emailInput.value.trim().toLowerCase();
         const password = this.passwordInput.value.trim();
         
-        console.log('=== TENTATIVE DE CONNEXION ===');
-        console.log('Email entré:', email);
-        console.log('Password entré:', JSON.stringify(password));
-        console.log('Password attendu:', JSON.stringify(PASSWORD_HASH));
-        console.log('Emails autorisés:', ALLOWED_EMAILS);
-        console.log('Match email:', ALLOWED_EMAILS.includes(email));
-        console.log('Match password:', password === PASSWORD_HASH);
-        console.log('==============================');
-        
         if (!ALLOWED_EMAILS.includes(email)) {
-            this.loginError.textContent = '❌ Email non autorisé: "' + email + '"\nEmails valides: ' + ALLOWED_EMAILS.join(', ');
+            this.loginError.textContent = '❌ Email non autorisé';
             this.loginError.style.whiteSpace = 'pre-line';
             return;
         }
         
-        if (password !== PASSWORD_HASH) {
-            this.loginError.textContent = '❌ Mot de passe incorrect\nVous avez entré: "' + password + '"\nAttendu: "' + PASSWORD_HASH + '"';
+        if (!(await this.validateCredentials(email, password))) {
+            this.loginError.textContent = '❌ Mot de passe incorrect';
             this.loginError.style.whiteSpace = 'pre-line';
             return;
         }
@@ -1501,8 +1499,6 @@ class Game {
             this.updateUI();
             this.saveGame(); // Save after converting
             
-            console.log(`🍯 Conversion: ${pollenBefore} pollen → ${honeyMade} honey. Pollen now: ${this.pollen}`);
-            
             // Spawn honey particles
             for (let i = 0; i < 8; i++) {
                 this.particles.push(new Particle(this.player.x, this.player.y, 'honey'));
@@ -1516,7 +1512,6 @@ class Game {
         this.pollen += bonusAmount;
         
         // Track quest progress for pollen collection (base amount, not multiplied)
-        console.log(`🌸 addPollen: ${amount} pollen, calling updateQuestProgress`);
         if (this.bearSystem) {
             this.bearSystem.updateQuestProgress('collect_pollen', amount);
         }
@@ -2288,11 +2283,6 @@ class Game {
         // Clear
         this.ctx.fillStyle = '#87CEEB';
         this.ctx.fillRect(0, 0, this.width, this.height);
-        
-        // Log once every 60 frames
-        if (this.frameCount % 60 === 0) {
-            console.log('🎨 Drawing frame', this.frameCount, '- Flowers:', this.flowers.length, '- Bees:', this.bees.length);
-        }
         
         // Draw grass patches
         this.ctx.fillStyle = '#90EE90';

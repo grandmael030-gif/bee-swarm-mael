@@ -1,5 +1,10 @@
 // Live Reload - Auto refresh quand les fichiers changent
 (function() {
+    // Uniquement en développement local : ne jamais poller en production (GitHub Pages).
+    if (location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        return;
+    }
+
     const POLL_INTERVAL = 1000; // Vérifier toutes les secondes
     let lastModified = Date.now();
     let isFirstCheck = true;
