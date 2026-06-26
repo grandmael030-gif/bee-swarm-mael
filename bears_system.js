@@ -514,7 +514,6 @@ class BearSystem {
     
     // Mettre à jour la progression
     updateProgress(type, amount) {
-        console.log(`🎯 Quest Update: ${type} +${amount}`);
         for (const bearId in this.playerQuests) {
             const progress = this.playerQuests[bearId];
             if (progress.unlocked && !progress.completed) {

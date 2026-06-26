@@ -24,6 +24,11 @@ class Auth {
         this.loginScreen = document.getElementById('loginScreen');
         this.gameScreen = document.getElementById('gameScreen');
         
+        // Toujours attacher les écouteurs de l'écran de connexion, même si un
+        // auto-login se déclenche : sinon les boutons (invité, admin, compte)
+        // restent morts après une déconnexion sans recharger la page.
+        this.bindLoginEvents();
+        
         // ============== MODE DEV BYPASS ==============
         // Ajoute ?dev=1 à l'URL pour skipper la connexion
         const urlParams = new URLSearchParams(window.location.search);
@@ -43,6 +48,11 @@ class Auth {
             return; // Auto-login en cours, ne pas continuer
         }
         
+        // Check for saved user login
+        this.checkSavedUserLogin();
+    }
+    
+    bindLoginEvents() {
         this.loginBtn.addEventListener('click', () => this.login());
         
         // Enter sur email passe au mot de passe
@@ -104,9 +114,6 @@ class Auth {
                 }
             });
         }
-        
-        // Check for saved user login
-        this.checkSavedUserLogin();
     }
     
     devBypass() {
@@ -204,7 +211,6 @@ class Auth {
             if (spawnBeeBtn) spawnBeeBtn.classList.remove('hidden');
             if (settingsBtn) settingsBtn.classList.remove('hidden');
             // Reset button is public, already visible
-            console.log('Admin buttons shown for:', email);
         } else {
             if (spawnBeeBtn) spawnBeeBtn.classList.add('hidden');
             if (settingsBtn) settingsBtn.classList.add('hidden');
@@ -381,7 +387,6 @@ class Auth {
         const userSaveKey = `beeSwarm_userGame_${username}`;
         const savedGame = localStorage.getItem(userSaveKey);
         if (savedGame) {
-            console.log('Loading saved game for user:', username);
             // The game will load this in loadGame() method
             localStorage.setItem('beeSwarm_currentUser', username);
         }
@@ -1445,8 +1450,6 @@ class Game {
         // Note: save=false when loading or batch purchasing, but we still want to track
         // We only skip tracking when loading (no bearSystem yet) or if explicitly loading
         if (this.bearSystem && type !== 'basic') {
-            console.log(`🐝 spawnBee: type=${type}, tracking for quests`);
-            
             // Track generic bee obtained
             this.bearSystem.updateQuestProgress('obtain_bee', 1);
             
