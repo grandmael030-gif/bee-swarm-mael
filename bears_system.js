@@ -555,6 +555,8 @@ class BearSystem {
         
         // Donner récompenses
         const rewards = { ...quest.rewards };
+        const bearName = bear.name;
+        const questName = quest.name;
         
         // Passer à la quête suivante
         progress.currentQuestIndex++;
@@ -584,7 +586,7 @@ class BearSystem {
         this.checkUnlockConditions();
         
         this.saveQuests();
-        return rewards;
+        return { rewards, bearName, questName };
     }
     
     // Débloquer le bear suivant
