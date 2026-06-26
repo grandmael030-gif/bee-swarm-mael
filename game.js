@@ -2,8 +2,25 @@
 // Jeu complet avec authentification
 
 // ==================== AUTHENTIFICATION ====================
-const ALLOWED_EMAILS = ['grandmael030@mail.com', 'grandmael030@gmail.com'];
-const PASSWORD_HASH = 'Mael04022012';
+// Les identifiants admin ne sont jamais stockés en clair : on ne garde que des empreintes SHA-256.
+const ALLOWED_EMAIL_HASHES = [
+    '8d04dcc23ad85038f7bf3a6d8d96437d6130499b4e751179f0ea2452e55d2c3b',
+    'f65f387bd10d1fe40de2332c1469d96b72092235f5666db6563974ad29f75b7a'
+];
+const PASSWORD_HASH = '25710c4f35a1af09409198bc3cfabab9f402800571c3b1121a376b6a90f7b9a2';
+
+async function sha256Hex(text) {
+    const data = new TextEncoder().encode(text);
+    const buffer = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(buffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+}
+
+async function isAllowedEmail(email) {
+    const hash = await sha256Hex(email.trim().toLowerCase());
+    return ALLOWED_EMAIL_HASHES.includes(hash);
+}
 
 class Auth {
     constructor() {
@@ -21,16 +38,6 @@ class Auth {
             console.log('DEV MODE: Bypassing login...');
             setTimeout(() => this.devBypass(), 100);
             return;
-        }
-        
-        // Check for auto-login from URL first
-        if (this.checkUrlAutoLogin()) {
-            return; // Auto-login en cours, ne pas continuer
-        }
-        
-        // Check for saved login
-        if (this.checkSavedLogin()) {
-            return; // Auto-login en cours, ne pas continuer
         }
         
         this.loginBtn.addEventListener('click', () => this.login());
@@ -97,6 +104,15 @@ class Auth {
         
         // Check for saved user login
         this.checkSavedUserLogin();
+
+        // Tentative d'auto-login admin (URL puis session sauvegardée).
+        // Déclenchée après l'attache des écouteurs pour que les boutons restent actifs.
+        setTimeout(() => this.tryAutoLogin(), 100);
+    }
+
+    async tryAutoLogin() {
+        if (await this.checkUrlAutoLogin()) return;
+        await this.checkSavedLogin();
     }
     
     devBypass() {
@@ -107,56 +123,43 @@ class Auth {
         console.log('DEV MODE: Logged in as admin');
     }
     
-    checkUrlAutoLogin() {
+    async checkUrlAutoLogin() {
         // Get email from URL parameters
         const urlParams = new URLSearchParams(window.location.search);
         const emailFromUrl = urlParams.get('email');
         
-        if (emailFromUrl) {
-            // Check if it's a valid email
-            const validEmails = ['grandmael030@mail.com', 'grandmael030@gmail.com'];
-            if (validEmails.includes(emailFromUrl.toLowerCase())) {
-                // Auto-fill email
-                this.emailInput.value = emailFromUrl;
-                
-                // Try auto-login if password is also in URL
-                const passwordFromUrl = urlParams.get('pwd');
-                if (passwordFromUrl && passwordFromUrl === PASSWORD_HASH) {
-                    setTimeout(() => {
-                        this.autoLogin(emailFromUrl, PASSWORD_HASH);
-                    }, 100);
-                    return true;
-                }
+        if (emailFromUrl && await isAllowedEmail(emailFromUrl)) {
+            // Auto-fill email
+            this.emailInput.value = emailFromUrl;
+            
+            // Try auto-login if password is also in URL
+            const passwordFromUrl = urlParams.get('pwd');
+            if (passwordFromUrl && (await sha256Hex(passwordFromUrl)) === PASSWORD_HASH) {
+                await this.autoLogin(emailFromUrl, passwordFromUrl);
+                return true;
             }
         }
         return false;
     }
     
-    checkSavedLogin() {
+    async checkSavedLogin() {
         // Check localStorage for saved credentials
         const savedEmail = localStorage.getItem('beeSwarm_email');
         const savedPassword = localStorage.getItem('beeSwarm_password');
         const rememberMe = localStorage.getItem('beeSwarm_remember') === 'true';
         
-        console.log('Checking saved login:', savedEmail, rememberMe);
-        
         if (savedEmail && savedPassword && rememberMe) {
             // Auto-fill saved credentials
             this.emailInput.value = savedEmail;
             this.passwordInput.value = savedPassword;
-            
-            console.log('Auto-login with saved credentials');
-            // Auto-login after short delay
-            setTimeout(() => {
-                this.autoLogin(savedEmail, savedPassword);
-            }, 100);
+            await this.autoLogin(savedEmail, savedPassword);
             return true;
         }
         return false;
     }
     
-    autoLogin(email, password) {
-        if (this.validateCredentials(email, password)) {
+    async autoLogin(email, password) {
+        if (await this.validateCredentials(email, password)) {
             this.emailInput.value = email;
             this.passwordInput.value = password;
             this.loginError.textContent = '';
@@ -168,7 +171,7 @@ class Auth {
             this.currentUser = email;
             
             // Show admin button for allowed email
-            this.checkAdminButton(email);
+            await this.checkAdminButton(email);
             
             // Show user info
             this.showUserInfo('Admin');
@@ -186,18 +189,17 @@ class Auth {
         }
     }
     
-    checkAdminButton(email) {
+    async checkAdminButton(email) {
         const spawnBeeBtn = document.getElementById('spawnBeeBtn');
         const settingsBtn = document.getElementById('settingsBtn');
         const resetBeesBtn = document.getElementById('resetBeesBtn');
         
-        const isAdmin = ALLOWED_EMAILS.includes(email.toLowerCase());
+        const isAdmin = await isAllowedEmail(email);
         
         if (isAdmin) {
             if (spawnBeeBtn) spawnBeeBtn.classList.remove('hidden');
             if (settingsBtn) settingsBtn.classList.remove('hidden');
             // Reset button is public, already visible
-            console.log('Admin buttons shown for:', email);
         } else {
             if (spawnBeeBtn) spawnBeeBtn.classList.add('hidden');
             if (settingsBtn) settingsBtn.classList.add('hidden');
@@ -205,9 +207,9 @@ class Auth {
         }
     }
     
-    validateCredentials(email, password) {
-        const validEmails = ['grandmael030@mail.com', 'grandmael030@gmail.com'];
-        return validEmails.includes(email.toLowerCase()) && password === PASSWORD_HASH;
+    async validateCredentials(email, password) {
+        if (!(await isAllowedEmail(email))) return false;
+        return (await sha256Hex(password)) === PASSWORD_HASH;
     }
     
     playPublic() {
@@ -397,27 +399,18 @@ class Auth {
         this.loginScreen.classList.add('active');
     }
     
-    login() {
+    async login() {
         const email = this.emailInput.value.trim().toLowerCase();
         const password = this.passwordInput.value.trim();
         
-        console.log('=== TENTATIVE DE CONNEXION ===');
-        console.log('Email entré:', email);
-        console.log('Password entré:', JSON.stringify(password));
-        console.log('Password attendu:', JSON.stringify(PASSWORD_HASH));
-        console.log('Emails autorisés:', ALLOWED_EMAILS);
-        console.log('Match email:', ALLOWED_EMAILS.includes(email));
-        console.log('Match password:', password === PASSWORD_HASH);
-        console.log('==============================');
-        
-        if (!ALLOWED_EMAILS.includes(email)) {
-            this.loginError.textContent = '❌ Email non autorisé: "' + email + '"\nEmails valides: ' + ALLOWED_EMAILS.join(', ');
+        if (!(await isAllowedEmail(email))) {
+            this.loginError.textContent = '❌ Email non autorisé';
             this.loginError.style.whiteSpace = 'pre-line';
             return;
         }
         
-        if (password !== PASSWORD_HASH) {
-            this.loginError.textContent = '❌ Mot de passe incorrect\nVous avez entré: "' + password + '"\nAttendu: "' + PASSWORD_HASH + '"';
+        if ((await sha256Hex(password)) !== PASSWORD_HASH) {
+            this.loginError.textContent = '❌ Mot de passe incorrect';
             this.loginError.style.whiteSpace = 'pre-line';
             return;
         }
