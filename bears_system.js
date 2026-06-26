@@ -514,7 +514,6 @@ class BearSystem {
     
     // Mettre à jour la progression
     updateProgress(type, amount) {
-        console.log(`🎯 Quest Update: ${type} +${amount}`);
         for (const bearId in this.playerQuests) {
             const progress = this.playerQuests[bearId];
             if (progress.unlocked && !progress.completed) {
@@ -530,7 +529,6 @@ class BearSystem {
                             }
                             const oldVal = progress.questProgress[type] || 0;
                             progress.questProgress[type] = oldVal + amount;
-                            console.log(`✅ ${bearId}: ${type} ${oldVal} → ${progress.questProgress[type]}/${obj.target}`);
                         }
                     }
                 }
@@ -556,6 +554,8 @@ class BearSystem {
         
         // Donner récompenses
         const rewards = { ...quest.rewards };
+        const bearName = bear.name;
+        const questName = quest.name;
         
         // Passer à la quête suivante
         progress.currentQuestIndex++;
@@ -585,7 +585,7 @@ class BearSystem {
         this.checkUnlockConditions();
         
         this.saveQuests();
-        return rewards;
+        return { rewards, bearName, questName };
     }
     
     // Débloquer le bear suivant

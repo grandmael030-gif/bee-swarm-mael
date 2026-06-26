@@ -3,7 +3,17 @@
 
 // ==================== AUTHENTIFICATION ====================
 const ALLOWED_EMAILS = ['grandmael030@mail.com', 'grandmael030@gmail.com'];
-const PASSWORD_HASH = 'Mael04022012';
+// SHA-256 du mot de passe admin (le mot de passe en clair n'est jamais stocké dans le code).
+const PASSWORD_HASH = '25710c4f35a1af09409198bc3cfabab9f402800571c3b1121a376b6a90f7b9a2';
+
+// Hash SHA-256 d'une chaîne -> hexadécimal (nécessite un contexte sécurisé : https ou localhost).
+async function hashPassword(password) {
+    const data = new TextEncoder().encode(password);
+    const buffer = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(buffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+}
 
 class Auth {
     constructor() {
@@ -13,6 +23,11 @@ class Auth {
         this.loginError = document.getElementById('loginError');
         this.loginScreen = document.getElementById('loginScreen');
         this.gameScreen = document.getElementById('gameScreen');
+        
+        // Toujours attacher les écouteurs de l'écran de connexion, même si un
+        // auto-login se déclenche : sinon les boutons (invité, admin, compte)
+        // restent morts après une déconnexion sans recharger la page.
+        this.bindLoginEvents();
         
         // ============== MODE DEV BYPASS ==============
         // Ajoute ?dev=1 à l'URL pour skipper la connexion
@@ -33,6 +48,11 @@ class Auth {
             return; // Auto-login en cours, ne pas continuer
         }
         
+        // Check for saved user login
+        this.checkSavedUserLogin();
+    }
+    
+    bindLoginEvents() {
         this.loginBtn.addEventListener('click', () => this.login());
         
         // Enter sur email passe au mot de passe
@@ -94,9 +114,6 @@ class Auth {
                 }
             });
         }
-        
-        // Check for saved user login
-        this.checkSavedUserLogin();
     }
     
     devBypass() {
@@ -119,11 +136,11 @@ class Auth {
                 // Auto-fill email
                 this.emailInput.value = emailFromUrl;
                 
-                // Try auto-login if password is also in URL
+                // Try auto-login if password is also in URL (validated in autoLogin)
                 const passwordFromUrl = urlParams.get('pwd');
-                if (passwordFromUrl && passwordFromUrl === PASSWORD_HASH) {
+                if (passwordFromUrl) {
                     setTimeout(() => {
-                        this.autoLogin(emailFromUrl, PASSWORD_HASH);
+                        this.autoLogin(emailFromUrl, passwordFromUrl);
                     }, 100);
                     return true;
                 }
@@ -138,14 +155,11 @@ class Auth {
         const savedPassword = localStorage.getItem('beeSwarm_password');
         const rememberMe = localStorage.getItem('beeSwarm_remember') === 'true';
         
-        console.log('Checking saved login:', savedEmail, rememberMe);
-        
         if (savedEmail && savedPassword && rememberMe) {
             // Auto-fill saved credentials
             this.emailInput.value = savedEmail;
             this.passwordInput.value = savedPassword;
             
-            console.log('Auto-login with saved credentials');
             // Auto-login after short delay
             setTimeout(() => {
                 this.autoLogin(savedEmail, savedPassword);
@@ -155,8 +169,8 @@ class Auth {
         return false;
     }
     
-    autoLogin(email, password) {
-        if (this.validateCredentials(email, password)) {
+    async autoLogin(email, password) {
+        if (await this.validateCredentials(email, password)) {
             this.emailInput.value = email;
             this.passwordInput.value = password;
             this.loginError.textContent = '';
@@ -197,7 +211,6 @@ class Auth {
             if (spawnBeeBtn) spawnBeeBtn.classList.remove('hidden');
             if (settingsBtn) settingsBtn.classList.remove('hidden');
             // Reset button is public, already visible
-            console.log('Admin buttons shown for:', email);
         } else {
             if (spawnBeeBtn) spawnBeeBtn.classList.add('hidden');
             if (settingsBtn) settingsBtn.classList.add('hidden');
@@ -205,9 +218,10 @@ class Auth {
         }
     }
     
-    validateCredentials(email, password) {
-        const validEmails = ['grandmael030@mail.com', 'grandmael030@gmail.com'];
-        return validEmails.includes(email.toLowerCase()) && password === PASSWORD_HASH;
+    async validateCredentials(email, password) {
+        if (!ALLOWED_EMAILS.includes(email.toLowerCase())) return false;
+        const hash = await hashPassword(password);
+        return hash === PASSWORD_HASH;
     }
     
     playPublic() {
@@ -249,7 +263,6 @@ class Auth {
         const userRemember = localStorage.getItem('beeSwarm_userRemember') === 'true';
         
         if (savedUsername && savedUserPassword && userRemember) {
-            console.log('Auto-login user:', savedUsername);
             setTimeout(() => {
                 this.autoLoginUser(savedUsername, savedUserPassword);
             }, 100);
@@ -374,7 +387,6 @@ class Auth {
         const userSaveKey = `beeSwarm_userGame_${username}`;
         const savedGame = localStorage.getItem(userSaveKey);
         if (savedGame) {
-            console.log('Loading saved game for user:', username);
             // The game will load this in loadGame() method
             localStorage.setItem('beeSwarm_currentUser', username);
         }
@@ -397,27 +409,18 @@ class Auth {
         this.loginScreen.classList.add('active');
     }
     
-    login() {
+    async login() {
         const email = this.emailInput.value.trim().toLowerCase();
         const password = this.passwordInput.value.trim();
         
-        console.log('=== TENTATIVE DE CONNEXION ===');
-        console.log('Email entré:', email);
-        console.log('Password entré:', JSON.stringify(password));
-        console.log('Password attendu:', JSON.stringify(PASSWORD_HASH));
-        console.log('Emails autorisés:', ALLOWED_EMAILS);
-        console.log('Match email:', ALLOWED_EMAILS.includes(email));
-        console.log('Match password:', password === PASSWORD_HASH);
-        console.log('==============================');
-        
         if (!ALLOWED_EMAILS.includes(email)) {
-            this.loginError.textContent = '❌ Email non autorisé: "' + email + '"\nEmails valides: ' + ALLOWED_EMAILS.join(', ');
+            this.loginError.textContent = '❌ Email non autorisé';
             this.loginError.style.whiteSpace = 'pre-line';
             return;
         }
         
-        if (password !== PASSWORD_HASH) {
-            this.loginError.textContent = '❌ Mot de passe incorrect\nVous avez entré: "' + password + '"\nAttendu: "' + PASSWORD_HASH + '"';
+        if (!(await this.validateCredentials(email, password))) {
+            this.loginError.textContent = '❌ Mot de passe incorrect';
             this.loginError.style.whiteSpace = 'pre-line';
             return;
         }
@@ -1447,8 +1450,6 @@ class Game {
         // Note: save=false when loading or batch purchasing, but we still want to track
         // We only skip tracking when loading (no bearSystem yet) or if explicitly loading
         if (this.bearSystem && type !== 'basic') {
-            console.log(`🐝 spawnBee: type=${type}, tracking for quests`);
-            
             // Track generic bee obtained
             this.bearSystem.updateQuestProgress('obtain_bee', 1);
             
@@ -1501,8 +1502,6 @@ class Game {
             this.updateUI();
             this.saveGame(); // Save after converting
             
-            console.log(`🍯 Conversion: ${pollenBefore} pollen → ${honeyMade} honey. Pollen now: ${this.pollen}`);
-            
             // Spawn honey particles
             for (let i = 0; i < 8; i++) {
                 this.particles.push(new Particle(this.player.x, this.player.y, 'honey'));
@@ -1516,7 +1515,6 @@ class Game {
         this.pollen += bonusAmount;
         
         // Track quest progress for pollen collection (base amount, not multiplied)
-        console.log(`🌸 addPollen: ${amount} pollen, calling updateQuestProgress`);
         if (this.bearSystem) {
             this.bearSystem.updateQuestProgress('collect_pollen', amount);
         }
@@ -1555,11 +1553,9 @@ class Game {
         document.getElementById('bearsModal').classList.add('hidden');
     }
     
-    displayBears() {
-        const bearsList = document.getElementById('bearsList');
-        if (!bearsList || !this.bearSystem) return;
-        
-        // Initialize baselines and update upgrade progress for all bears
+    // Initialize baselines and update upgrade progress for all unlocked bears
+    updateAllBearProgress() {
+        if (!this.bearSystem) return;
         Object.values(this.bearSystem.bears).forEach(bear => {
             const progress = this.bearSystem.getQuestProgress(bear.id);
             if (progress.unlocked && !progress.completed) {
@@ -1567,6 +1563,44 @@ class Game {
                 this.bearSystem.updateUpgradeProgress(bear.id, this.upgrades);
             }
         });
+    }
+    
+    // Cheap read-only fingerprint of what the bears panel renders, used to
+    // re-render live only when something actually changed.
+    getBearsSignature() {
+        if (!this.bearSystem) return '';
+        let sig = '';
+        Object.values(this.bearSystem.bears).forEach(bear => {
+            const progress = this.bearSystem.getQuestProgress(bear.id);
+            sig += `${bear.id}:${progress.currentQuestIndex}:${progress.unlocked ? 1 : 0}:${progress.completed ? 1 : 0}:`;
+            const quest = bear.quests[progress.currentQuestIndex];
+            if (quest) {
+                quest.objectives.forEach(obj => {
+                    sig += `${obj.type}=${Math.min(progress.questProgress[obj.type] || 0, obj.target)},`;
+                });
+                sig += this.bearSystem.checkQuestCompletion(bear.id) ? 'R' : '-';
+            }
+            sig += '|';
+        });
+        return sig;
+    }
+    
+    // Re-render the bears panel live when it's open and its content changed.
+    refreshBearsIfOpen() {
+        const modal = document.getElementById('bearsModal');
+        if (!modal || modal.classList.contains('hidden')) return;
+        this.updateAllBearProgress();
+        const sig = this.getBearsSignature();
+        if (sig !== this._lastBearsSignature) {
+            this.displayBears();
+        }
+    }
+    
+    displayBears() {
+        const bearsList = document.getElementById('bearsList');
+        if (!bearsList || !this.bearSystem) return;
+        
+        this.updateAllBearProgress();
         
         let html = '';
         
@@ -1634,6 +1668,7 @@ class Game {
         });
         
         bearsList.innerHTML = html;
+        this._lastBearsSignature = this.getBearsSignature();
     }
     
     completeBearQuest(bearId) {
@@ -2289,11 +2324,6 @@ class Game {
         this.ctx.fillStyle = '#87CEEB';
         this.ctx.fillRect(0, 0, this.width, this.height);
         
-        // Log once every 60 frames
-        if (this.frameCount % 60 === 0) {
-            console.log('🎨 Drawing frame', this.frameCount, '- Flowers:', this.flowers.length, '- Bees:', this.bees.length);
-        }
-        
         // Draw grass patches
         this.ctx.fillStyle = '#90EE90';
         for (let i = 0; i < 10; i++) {
@@ -2353,6 +2383,10 @@ class Game {
         this.frameCount++;
         this.update();
         this.draw();
+        // Live-refresh the bears/quests panel while it's open (throttled)
+        if (this.frameCount % 6 === 0) {
+            this.refreshBearsIfOpen();
+        }
         requestAnimationFrame(() => this.loop());
     }
 }
