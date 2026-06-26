@@ -529,7 +529,6 @@ class BearSystem {
                             }
                             const oldVal = progress.questProgress[type] || 0;
                             progress.questProgress[type] = oldVal + amount;
-                            console.log(`✅ ${bearId}: ${type} ${oldVal} → ${progress.questProgress[type]}/${obj.target}`);
                         }
                     }
                 }
