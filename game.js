@@ -1553,11 +1553,9 @@ class Game {
         document.getElementById('bearsModal').classList.add('hidden');
     }
     
-    displayBears() {
-        const bearsList = document.getElementById('bearsList');
-        if (!bearsList || !this.bearSystem) return;
-        
-        // Initialize baselines and update upgrade progress for all bears
+    // Initialize baselines and update upgrade progress for all unlocked bears
+    updateAllBearProgress() {
+        if (!this.bearSystem) return;
         Object.values(this.bearSystem.bears).forEach(bear => {
             const progress = this.bearSystem.getQuestProgress(bear.id);
             if (progress.unlocked && !progress.completed) {
@@ -1565,6 +1563,44 @@ class Game {
                 this.bearSystem.updateUpgradeProgress(bear.id, this.upgrades);
             }
         });
+    }
+    
+    // Cheap read-only fingerprint of what the bears panel renders, used to
+    // re-render live only when something actually changed.
+    getBearsSignature() {
+        if (!this.bearSystem) return '';
+        let sig = '';
+        Object.values(this.bearSystem.bears).forEach(bear => {
+            const progress = this.bearSystem.getQuestProgress(bear.id);
+            sig += `${bear.id}:${progress.currentQuestIndex}:${progress.unlocked ? 1 : 0}:${progress.completed ? 1 : 0}:`;
+            const quest = bear.quests[progress.currentQuestIndex];
+            if (quest) {
+                quest.objectives.forEach(obj => {
+                    sig += `${obj.type}=${Math.min(progress.questProgress[obj.type] || 0, obj.target)},`;
+                });
+                sig += this.bearSystem.checkQuestCompletion(bear.id) ? 'R' : '-';
+            }
+            sig += '|';
+        });
+        return sig;
+    }
+    
+    // Re-render the bears panel live when it's open and its content changed.
+    refreshBearsIfOpen() {
+        const modal = document.getElementById('bearsModal');
+        if (!modal || modal.classList.contains('hidden')) return;
+        this.updateAllBearProgress();
+        const sig = this.getBearsSignature();
+        if (sig !== this._lastBearsSignature) {
+            this.displayBears();
+        }
+    }
+    
+    displayBears() {
+        const bearsList = document.getElementById('bearsList');
+        if (!bearsList || !this.bearSystem) return;
+        
+        this.updateAllBearProgress();
         
         let html = '';
         
@@ -1632,6 +1668,7 @@ class Game {
         });
         
         bearsList.innerHTML = html;
+        this._lastBearsSignature = this.getBearsSignature();
     }
     
     completeBearQuest(bearId) {
@@ -2346,6 +2383,10 @@ class Game {
         this.frameCount++;
         this.update();
         this.draw();
+        // Live-refresh the bears/quests panel while it's open (throttled)
+        if (this.frameCount % 6 === 0) {
+            this.refreshBearsIfOpen();
+        }
         requestAnimationFrame(() => this.loop());
     }
 }
