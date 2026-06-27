@@ -444,7 +444,6 @@ class BearSystem {
                 if (progress.questProgress[baselineKey] === undefined) {
                     const currentLevel = currentUpgrades[obj.upgradeType] || 0;
                     progress.questProgress[baselineKey] = currentLevel;
-                    console.log(`📊 Baseline ${bearId}: ${obj.upgradeType} = ${currentLevel} (target: +${obj.target})`);
                 }
             }
         }
@@ -514,7 +513,6 @@ class BearSystem {
     
     // Mettre à jour la progression
     updateProgress(type, amount) {
-        console.log(`🎯 Quest Update: ${type} +${amount}`);
         for (const bearId in this.playerQuests) {
             const progress = this.playerQuests[bearId];
             if (progress.unlocked && !progress.completed) {
@@ -530,7 +528,6 @@ class BearSystem {
                             }
                             const oldVal = progress.questProgress[type] || 0;
                             progress.questProgress[type] = oldVal + amount;
-                            console.log(`✅ ${bearId}: ${type} ${oldVal} → ${progress.questProgress[type]}/${obj.target}`);
                         }
                     }
                 }

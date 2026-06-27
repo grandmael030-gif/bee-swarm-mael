@@ -16,6 +16,7 @@ let html = fs.readFileSync('index.html', 'utf8');
 // Remplacer les URLs avec le hash
 html = html.replace(/style\.css/g, `style.css?v=${hash}`);
 html = html.replace(/game\.js/g, `game.js?v=${hash}`);
+html = html.replace(/bears_system\.js/g, `bears_system.js?v=${hash}`);
 html = html.replace(/updatechecker\.js/g, `updatechecker.js?v=${hash}`);
 
 // Ajouter un meta version

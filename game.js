@@ -35,7 +35,6 @@ class Auth {
         // Ajoute ?dev=1 à l'URL pour skipper la connexion
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('dev') === '1' || localStorage.getItem('beeSwarm_dev') === '1') {
-            console.log('DEV MODE: Bypassing login...');
             setTimeout(() => this.devBypass(), 100);
             return;
         }
@@ -120,7 +119,6 @@ class Auth {
         this.loginScreen.classList.remove('active');
         this.gameScreen.classList.add('active');
         game.init();
-        console.log('DEV MODE: Logged in as admin');
     }
     
     async checkUrlAutoLogin() {
@@ -251,7 +249,6 @@ class Auth {
         const userRemember = localStorage.getItem('beeSwarm_userRemember') === 'true';
         
         if (savedUsername && savedUserPassword && userRemember) {
-            console.log('Auto-login user:', savedUsername);
             setTimeout(() => {
                 this.autoLoginUser(savedUsername, savedUserPassword);
             }, 100);
@@ -376,7 +373,6 @@ class Auth {
         const userSaveKey = `beeSwarm_userGame_${username}`;
         const savedGame = localStorage.getItem(userSaveKey);
         if (savedGame) {
-            console.log('Loading saved game for user:', username);
             // The game will load this in loadGame() method
             localStorage.setItem('beeSwarm_currentUser', username);
         }
@@ -726,7 +722,7 @@ class Flower {
         this.regenInterval = 5000; // Default 5 seconds in ms
         this.lastRegen = Date.now();
         this.targetedBy = null; // Track which bee is targeting this flower (1 bee per flower)
-        this.id = Math.random().toString(36).substr(2, 9); // Unique ID for tracking
+        this.id = Math.random().toString(36).substring(2, 11); // Unique ID for tracking
     }
     
     update() {
@@ -846,7 +842,6 @@ class Game {
         // Initialize Bear System (Quests)
         try {
             this.bearSystem = new BearSystem();
-            console.log('✅ BearSystem initialized:', this.bearSystem);
         } catch (e) {
             console.error('❌ BearSystem init failed:', e);
         }
@@ -905,7 +900,6 @@ class Game {
         if (bearsBtn && closeBearsBtn) {
             bearsBtn.addEventListener('click', () => this.openBears());
             closeBearsBtn.addEventListener('click', () => this.closeBears());
-            console.log('✅ Bears buttons initialized');
         } else {
             console.error('❌ Bears buttons not found:', {bearsBtn, closeBearsBtn});
         }
@@ -914,7 +908,6 @@ class Game {
         const rebirthBtn = document.getElementById('rebirthBtn');
         if (rebirthBtn) {
             rebirthBtn.addEventListener('click', () => this.rebirth());
-            console.log('✅ Rebirth button initialized');
         } else {
             console.error('❌ Rebirth button not found');
         }
@@ -1028,7 +1021,6 @@ class Game {
     updateMaxBees() {
         // Base: 100 bees, +50 per rebirth
         this.maxBees = 100 + (this.rebirthCount * 50);
-        console.log(`🐝 Max bees: ${this.maxBees} (base 100 + ${this.rebirthCount} renaissances × 50)`);
     }
     
     saveRebirthData() {
@@ -1041,7 +1033,7 @@ class Game {
     rebirth() {
         // Require at least 1 million honey to rebirth
         if (this.honey < 1000000) {
-            alert(`✨ Pas assez de miel pour la Renaissance !\n\nBesoin de: 1,000,000 🍯\nTu as: ${this.honey.toLocaleString()} 🍯\n\nContinue à jouer pour accumuler plus de miel !`);
+            this.showToast(`✨ Pas assez de miel pour la Renaissance !\nBesoin: 1 000 000 🍯 — Tu as: ${this.honey.toLocaleString()} 🍯`, 'warning');
             return;
         }
         
@@ -1090,11 +1082,7 @@ class Game {
         this.updateUI();
         this.saveGame();
         
-        alert(`✨ Renaissance complète !\n\n` +
-            `Tu as maintenant ${this.rebirthCount} points de Renaissance !\n` +
-            `Bonus pollen: x${this.rebirthMultiplier.toFixed(1)}\n` +
-            `Limite d'abeilles: ${this.maxBees} (+50 par renaissance) 🐝\n\n` +
-            `Bon courage pour ta nouvelle aventure ! 🐝✨`);
+        this.showToast(`✨ Renaissance complète ! ${this.rebirthCount} point(s) · Bonus pollen x${this.rebirthMultiplier.toFixed(1)} · Limite ${this.maxBees} 🐝`, 'success');
     }
     
     saveSettings() {
@@ -1128,7 +1116,7 @@ class Game {
         this.applySettings(settings);
         
         // Show confirmation
-        alert('Réglages sauvegardés ! 🎮');
+        this.showToast('Réglages sauvegardés ! 🎮', 'success');
         this.closeSettings();
     }
     
@@ -1144,7 +1132,6 @@ class Game {
             this.updateUI();
         }
         
-        console.log('Settings applied:', settings);
     }
     
     resetBees() {
@@ -1239,7 +1226,6 @@ class Game {
             this.flowers.push(flower);
         }
         
-        console.log('Respawned', count, 'flowers with regen time:', regenTimeMs + 'ms');
     }
     
     setupInputs() {
@@ -1304,23 +1290,14 @@ class Game {
         this.maxX = this.width - 30;
         this.maxY = this.height - 30;
         
-        console.log('🎮 Init game - Dimensions:', this.width, 'x', this.height);
-        console.log('📐 Boundaries:', this.minX, this.maxX, this.minY, this.maxY);
-        
         // Load saved settings and apply them
         const savedSettings = JSON.parse(localStorage.getItem('beeSwarm_settings') || '{}');
-        
-        // Apply settings automatically
-        if (savedSettings.flowerCount) {
-            console.log('📋 Settings loaded:', savedSettings);
-        }
         
         const flowerCount = savedSettings.flowerCount || 20;
         const regenTimeMs = savedSettings.flowerRegenMs || 5000;
         const pollenAmount = Math.max(50, Math.floor(regenTimeMs / 100));
         
         // Create initial flowers with saved settings
-        console.log('🌸 Creating', flowerCount, 'flowers with regen:', regenTimeMs + 'ms');
         for (let i = 0; i < flowerCount; i++) {
             const x = this.minX + Math.random() * (this.maxX - this.minX);
             const y = this.minY + Math.random() * (this.maxY - this.minY);
@@ -1330,12 +1307,10 @@ class Game {
             flower.regenInterval = regenTimeMs;
             this.flowers.push(flower);
         }
-        console.log('✅ Flowers created:', this.flowers.length);
         
         // Apply start honey if set
         if (savedSettings.startHoney && this.honey === 0) {
             this.honey = savedSettings.startHoney;
-            console.log('💰 Start honey applied:', savedSettings.startHoney);
         }
         
         // Apply loaded upgrades
@@ -1414,7 +1389,7 @@ class Game {
     spawnBee(type, save = true) {
         // Limit max bees to prevent browser freeze
         if (this.bees.length >= this.maxBees) {
-            alert('Limite atteinte : ' + this.maxBees + ' abeilles maximum !');
+            this.showToast('Limite atteinte : ' + this.maxBees + ' abeilles maximum !', 'warning');
             return;
         }
         
@@ -1440,8 +1415,6 @@ class Game {
         // Note: save=false when loading or batch purchasing, but we still want to track
         // We only skip tracking when loading (no bearSystem yet) or if explicitly loading
         if (this.bearSystem && type !== 'basic') {
-            console.log(`🐝 spawnBee: type=${type}, tracking for quests`);
-            
             // Track generic bee obtained
             this.bearSystem.updateQuestProgress('obtain_bee', 1);
             
@@ -1494,8 +1467,6 @@ class Game {
             this.updateUI();
             this.saveGame(); // Save after converting
             
-            console.log(`🍯 Conversion: ${pollenBefore} pollen → ${honeyMade} honey. Pollen now: ${this.pollen}`);
-            
             // Spawn honey particles
             for (let i = 0; i < 8; i++) {
                 this.particles.push(new Particle(this.player.x, this.player.y, 'honey'));
@@ -1509,7 +1480,6 @@ class Game {
         this.pollen += bonusAmount;
         
         // Track quest progress for pollen collection (base amount, not multiplied)
-        console.log(`🌸 addPollen: ${amount} pollen, calling updateQuestProgress`);
         if (this.bearSystem) {
             this.bearSystem.updateQuestProgress('collect_pollen', amount);
         }
@@ -1656,9 +1626,6 @@ class Game {
             });
             
             // Notification dans la console au lieu d'alert bloquante
-            console.log(`✅ QUÊTE COMPLÉTÉE: ${result.bearName} - "${result.questName}"`);
-            console.log(`🎁 Récompenses: ${result.rewards.honey || 0} miel, ${result.rewards.pollen || 0} pollen, ${result.rewards.bee || 'aucune'} abeille`);
-            
             // Effet visuel: spawn de particules dorées
             for (let i = 0; i < 20; i++) {
                 this.particles.push(new Particle(this.player.x, this.player.y, 'sparkle'));
@@ -1770,7 +1737,7 @@ class Game {
         
         // Max level is 10 for all upgrades
         if (currentLevel >= 10) {
-            alert('🏆 Niveau MAX atteint !\nCet upgrade est déjà au niveau maximum (10).');
+            this.showToast('🏆 Niveau MAX atteint ! (10)', 'info');
             return;
         }
         
@@ -1778,7 +1745,7 @@ class Game {
         
         // Enable teleport mode at level 7 (message only for info)
         if (type === 'speed' && currentLevel === 6) {
-            alert('⚡ Niveau 7 débloquera la TÉLÉPORTATION !\nLes abeilles iront à la vitesse de l\'éclair ! 🚀');
+            this.showToast('⚡ Niveau 7 débloquera la TÉLÉPORTATION ! 🚀', 'info');
         }
         
         if (this.honey >= cost) {
@@ -1800,7 +1767,7 @@ class Game {
                 });
             }
         } else {
-            alert('Pas assez de miel ! Besoin de ' + cost + ' 🍯');
+            this.showToast('Pas assez de miel ! Besoin de ' + this.formatNumber(cost) + ' 🍯', 'error');
         }
     }
     
@@ -1919,7 +1886,7 @@ class Game {
         // If at max bees, exchange the worst bee for a better one
         if (this.bees.length >= this.maxBees) {
             if (type === 'basic') {
-                alert('Limite atteinte : ' + this.maxBees + ' abeilles maximum !');
+                this.showToast('Limite atteinte : ' + this.maxBees + ' abeilles maximum !', 'warning');
                 this.closeShop();
                 return;
             }
@@ -1960,10 +1927,10 @@ class Game {
                 this.saveGame();
                 
                 const newTypeName = type === 'red' ? 'Rouge' : type === 'blue' ? 'Bleue' : 'Légendaire';
-                alert(`🔄 Échange effectué !\n1 Abeille ${exchangedType} → 1 Abeille ${newTypeName}\n💰 -${cost} miel`);
+                this.showToast(`🔄 Échange : 1 Abeille ${exchangedType} → 1 Abeille ${newTypeName} · 💰 -${this.formatNumber(cost)} miel`, 'success');
                 return;
             } else {
-                alert('❌ Limite atteinte (' + this.maxBees + ' abeilles) et pas d\'abeille à échanger !\nTu as déjà que des abeilles de haut niveau.');
+                this.showToast('❌ Limite atteinte (' + this.maxBees + ') et aucune abeille à échanger !', 'warning');
                 this.closeShop();
                 return;
             }
@@ -1975,7 +1942,7 @@ class Game {
             this.spawnBee(type);
             this.closeShop();
         } else {
-            alert('Pas assez de miel ! 🍯');
+            this.showToast('Pas assez de miel ! 🍯', 'error');
         }
     }
     
@@ -2039,14 +2006,14 @@ class Game {
                         this.saveGame();
                         this.updateUI();
                         const typeName = type === 'red' ? 'Rouges' : type === 'blue' ? 'Bleues' : 'Légendaires';
-                        alert(`🔄 ${count} Échanges effectués !\n${count} abeilles → ${count} ${typeName}\n💰 -${totalCost} miel`);
+                        this.showToast(`🔄 ${count} échanges → ${count} ${typeName} · 💰 -${this.formatNumber(totalCost)} miel`, 'success');
                         this.closeShop();
                     }
                 } else {
-                    alert('❌ Pas d\'abeilles à échanger ou pas assez de miel !');
+                    this.showToast('❌ Pas d\'abeilles à échanger ou pas assez de miel !', 'error');
                 }
             } else {
-                alert('Limite atteinte : ' + this.maxBees + ' abeilles maximum !');
+                this.showToast('Limite atteinte : ' + this.maxBees + ' abeilles maximum !', 'warning');
             }
             return;
         }
@@ -2065,10 +2032,10 @@ class Game {
             this.saveGame(); // Save once at the end
             this.updateUI();
             const typeName = type === 'red' ? 'Rouges' : type === 'blue' ? 'Bleues' : type === 'legendary' ? 'Légendaires' : 'de Base';
-            alert(`✅ ${toBuy} Abeilles ${typeName} achetées !\n💰 -${totalCost} miel`);
+            this.showToast(`✅ ${toBuy} abeilles ${typeName} achetées · 💰 -${this.formatNumber(totalCost)} miel`, 'success');
             this.closeShop();
         } else {
-            alert('Pas assez de miel ! 🍯');
+            this.showToast('Pas assez de miel ! 🍯', 'error');
         }
     }
     
@@ -2080,7 +2047,36 @@ class Game {
         if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
         return num.toString();
     }
-    
+
+    // Non-blocking toast notification (replaces blocking alert())
+    showToast(message, type = 'info') {
+        let container = document.getElementById('toastContainer');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toastContainer';
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+
+        // Trigger entrance animation on next frame
+        requestAnimationFrame(() => toast.classList.add('toast-show'));
+
+        const remove = () => {
+            toast.classList.remove('toast-show');
+            toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+            // Fallback removal in case the transition doesn't fire
+            setTimeout(() => toast.remove(), 400);
+        };
+
+        toast.addEventListener('click', remove);
+        setTimeout(remove, 2800);
+    }
+
     updateUI() {
         this.honeyEl.textContent = this.formatNumber(this.honey);
         this.pollenEl.textContent = this.formatNumber(this.pollen);
@@ -2119,9 +2115,9 @@ class Game {
         // Player movement (keyboard)
         const speed = 5;
         if (this.keys['ArrowUp'] || this.keys['w'] || this.keys['z']) this.player.y -= speed;
-        if (this.keys['ArrowDown'] || this.keys['s'] || this.keys['s']) this.player.y += speed;
+        if (this.keys['ArrowDown'] || this.keys['s']) this.player.y += speed;
         if (this.keys['ArrowLeft'] || this.keys['a'] || this.keys['q']) this.player.x -= speed;
-        if (this.keys['ArrowRight'] || this.keys['d'] || this.keys['d']) this.player.x += speed;
+        if (this.keys['ArrowRight'] || this.keys['d']) this.player.x += speed;
         
         // Touch follow
         if (this.mouse.down) {
@@ -2281,11 +2277,6 @@ class Game {
         // Clear
         this.ctx.fillStyle = '#87CEEB';
         this.ctx.fillRect(0, 0, this.width, this.height);
-        
-        // Log once every 60 frames
-        if (this.frameCount % 60 === 0) {
-            console.log('🎨 Drawing frame', this.frameCount, '- Flowers:', this.flowers.length, '- Bees:', this.bees.length);
-        }
         
         // Draw grass patches
         this.ctx.fillStyle = '#90EE90';
