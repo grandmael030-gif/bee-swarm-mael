@@ -1,0 +1,11 @@
+{
+  "name": "bee-swarm-mael",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bee Swarm Simulator - Web Edition : un jeu idle de butinage en JavaScript vanilla.",
+  "scripts": {
+    "build": "node build.js",
+    "start": "npx --yes serve ."
+  },
+  "license": "MIT"
+}
